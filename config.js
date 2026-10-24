@@ -10,8 +10,8 @@
    FOUNDING / GUARANTEE / SHOW_PROOF_SLOTS: off until confirmed. Proof slots are never filled with made-up results. */
 window.BORIS_SITE = {
   DEMO_APP_URL: "https://boris148.github.io/boris-ai-demo/",
-  DEMO_FORM_ACTION: "",
-  BOOKING_URL: "",
+  DEMO_FORM_ACTION: "https://boris-leads.hireboris.workers.dev/",
+  BOOKING_URL: "https://api.leadconnectorhq.com/widget/booking/ys5VGNHlqc0LOathxxMi",
   CALL_AUDIO: true,
   SHOW_PRICES: false,
   STRIPE_CHECKOUT_URL: "",

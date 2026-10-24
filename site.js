@@ -149,7 +149,17 @@
     if (show && C.ANNUAL_MONTHS_FREE) setText("faqAnnual", "Pay a year up front and get " + C.ANNUAL_MONTHS_FREE + " months free.");
   }
 
-  /* ---------------------------------------------------------------- mail links */
+  /* ---------------------------------------------------------------- mail + booking links */
+  // the booking page fills in the details they already gave us
+  var bookingUrl = function (v) {
+    var parts = String(v.name || "").trim().split(/\s+/), q = new URLSearchParams();
+    if (parts[0]) q.set("first_name", parts[0]);
+    if (parts.length > 1) q.set("last_name", parts.slice(1).join(" "));
+    if (v.email) q.set("email", v.email);
+    if (v.phone) q.set("phone", v.phone);
+    if (v.firm) q.set("company_name", v.firm);
+    return C.BOOKING_URL + (C.BOOKING_URL.indexOf("?") < 0 ? "?" : "&") + q.toString();
+  };
   var mailto = function (to, subject, body) {
     return "mailto:" + to + "?subject=" + encodeURIComponent(subject) + (body ? "&body=" + encodeURIComponent(body) : "");
   };
@@ -321,7 +331,7 @@
       : "The Boris demo opens in a new tab: a sample firm with demo data. Start on Today, then tap Ask and give him a job.";
     var od = $("openDemo"), bk = $("bookCall");
     od.href = DEMO;
-    bk.href = C.BOOKING_URL || mailto(C.CONTACT_EMAIL || "", "Boris walkthrough for " + (v.firm || "my firm"), lines(v) + "\n\nGood times for a 20-minute call:\n");
+    bk.href = C.BOOKING_URL ? bookingUrl(v) : mailto(C.CONTACT_EMAIL || "", "Boris walkthrough for " + (v.firm || "my firm"), lines(v) + "\n\nGood times for a 20-minute call:\n");
     if (C.BOOKING_URL) { bk.target = "_blank"; bk.textContent = "Want a walkthrough? Book a 20-min call"; }
     else bk.textContent = "Want a walkthrough? Email us for a 20-min call";
     // one blue: the action they asked for

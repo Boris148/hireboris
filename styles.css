@@ -528,3 +528,6 @@ p { margin: 0; }
 /* long labels wrap instead of pushing the panel wider than the phone */
 .inpanel, .form, .cta__in > * { min-width: 0; }
 .inpanel .btn, .start .btn, .next .btn { white-space: normal; text-align: center; line-height: 1.25; padding-top: 12px; padding-bottom: 12px; }
+
+/* spam trap: off-screen, never seen or tabbed to by people */
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
