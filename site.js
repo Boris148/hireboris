@@ -1,5 +1,5 @@
-/* Boris site: the live "what Boris is doing" line, config flags, the missed-call math, seats from config.js, and the form.
-   No network calls unless DEMO_FORM_ACTION is set. */
+/* Boris site: the live "what Boris is doing" line, config flags, the example-call players, the missed-call math,
+   seats from config.js, and the Try Boris free form (instant demo access). No network calls unless DEMO_FORM_ACTION is set. */
 (function () {
   "use strict";
   var C = window.BORIS_SITE || {};
@@ -73,28 +73,19 @@
   }
 
   /* ---------------------------------------------------------------- config flags */
-  // data-flag="founding|guarantee|proof" shows only when that flag is on; "nofounding" only when founding is off.
+  // data-flag="founding|guarantee|proof" shows only when that flag is on.
   var F = C.FOUNDING || {}, G = C.GUARANTEE || {};
   var flags = { founding: !!F.on, guarantee: !!G.on, proof: !!C.SHOW_PROOF_SLOTS };
-  flags.nofounding = !flags.founding;
   [].forEach.call(document.querySelectorAll("[data-flag]"), function (el) {
     if (flags[el.getAttribute("data-flag")]) el.hidden = false;
-    else el.parentNode.removeChild(el); // removed, not just hidden (hidden <option>s still show on iOS)
+    else el.parentNode.removeChild(el);
   });
   var setText = function (id, t) { var el = $(id); if (el && t) el.textContent = t; };
-  var primary = flags.founding ? "Check if your market is open" : "Book a demo";
-  [].forEach.call(document.querySelectorAll('[data-cta="primary"]'), function (el) {
-    // the header button stays short so it fits next to the logo on phones
-    el.textContent = flags.founding && el.closest(".top") ? "Check your market" : primary;
-    el.setAttribute("data-interest", flags.founding ? "Check if my market is open" : "A demo for my firm");
-  });
   if (flags.founding) {
     setText("foundName", "One firm per market"); setText("foundLine", "Once your metro is taken, it's closed to other firms at founding terms.");
     if (typeof F.spotsLeft === "number") { var fl = $("foundLeft"); fl.textContent = F.spotsLeft + " founding spots left"; fl.hidden = false; }
     setText("offerEyebrow", "Founding firms"); setText("offerH", F.name);
     setText("offerSub", "Sign more cases without the next hire. " + (F.line || ""));
-    setText("ctaH", "Check if your market is open.");
-    setText("ctaSub", "Tell us your city. We'll tell you if it's open, then show you Boris working on a firm like yours.");
   }
   if (flags.guarantee) {
     setText("guarName", G.name); setText("guarLine", G.line); setText("guarFine", G.fine);
@@ -124,16 +115,17 @@
     var show = !!C.SHOW_PRICES;
     $("priceSub").textContent = show
       ? (flags.founding ? "Founding price, locked for as long as you stay. " : "") + "Start with the phones. Add jobs when you're ready."
-      : "Plans from Answers to Full Team. Book a demo for pricing.";
+      : "Plans from Answers to Full Team. Book a demo call for pricing.";
     var setupLine = function (s) {
       var f = flags.founding && typeof s.foundingSetup === "number" && s.foundingSetup < s.setup;
       if (!f) return money(s.setup) + " one-time setup";
       return (s.foundingSetup ? money(s.foundingSetup) : "No") + " setup for founding firms <s>" + money(s.setup) + "</s>";
     };
     seatsEl.innerHTML = C.SEATS.map(function (s) {
-      var btn = s.selfServe
-        ? '<a class="btn btn--primary btn--block" href="' + esc(C.STRIPE_CHECKOUT_URL || "#demo") + '"' + (C.STRIPE_CHECKOUT_URL ? ' rel="noopener"' : ' data-interest="Start now with Answers"') + ">Start now</a>"
-        : '<a class="btn ' + (s.featured ? "btn--dark" : "btn--ghost") + ' btn--block" href="#demo" data-interest="A demo for my firm">Book a demo</a>';
+      // only two intents on the page: try free, or book a demo call. A Stripe link is the one exception.
+      var btn = s.selfServe && C.STRIPE_CHECKOUT_URL
+        ? '<a class="btn btn--dark btn--block" href="' + esc(C.STRIPE_CHECKOUT_URL) + '" rel="noopener">Start now</a>'
+        : '<a class="btn ' + (s.featured ? "btn--dark" : "btn--ghost") + ' btn--block" href="#try" data-intent="call">Book a demo call</a>';
       return (
         '<article class="seat' + (s.featured ? " seat--featured" : "") + '">' +
         (s.featured ? '<span class="seat__tag">Most complete</span>' : "") +
@@ -153,72 +145,238 @@
         "<p>" + esc(C.ADDON.line) + "</p>";
     }
     if (show && C.ANNUAL_MONTHS_FREE) addonEl.insertAdjacentHTML("afterend", '<p class="fine fine--center">Pay for the year up front and get ' + C.ANNUAL_MONTHS_FREE + " months free.</p>");
-    if (!show) addonEl.insertAdjacentHTML("afterend", '<p class="seats__cta"><a class="btn btn--primary" href="#demo" data-interest="A demo for my firm">Book a demo for pricing</a></p>');
+    if (!show) addonEl.insertAdjacentHTML("afterend", '<p class="seats__cta"><a class="btn btn--ghost" href="#try" data-intent="call">Book a demo call for pricing</a></p>');
     if (show && C.ANNUAL_MONTHS_FREE) setText("faqAnnual", "Pay a year up front and get " + C.ANNUAL_MONTHS_FREE + " months free.");
   }
 
-  /* ---------------------------------------------------------------- mailto + "interest" links */
+  /* ---------------------------------------------------------------- mail links */
   var mailto = function (to, subject, body) {
     return "mailto:" + to + "?subject=" + encodeURIComponent(subject) + (body ? "&body=" + encodeURIComponent(body) : "");
   };
-  if (C.CONTACT_EMAIL) {
-    var cl = $("contactLink"); if (cl) { cl.href = mailto(C.CONTACT_EMAIL, "Boris"); cl.textContent = C.CONTACT_EMAIL; }
-    var fm = $("footMail"); if (fm) fm.href = mailto(C.CONTACT_EMAIL, "Boris");
-  }
-  var sel = $("f-int"), formBtn = $("formBtn");
-  var BTN = {
-    "A demo for my firm": "Book a demo", "A free missed-call audit": "Get my free audit", "Start now with Answers": "Start now",
-    "Check if my market is open": "Check my market", "Becoming a partner": "Become a partner",
-  };
-  var syncBtn = function () { if (sel && formBtn) formBtn.textContent = BTN[sel.value] || "Send"; };
-  if (sel) { sel.addEventListener("change", syncBtn); syncBtn(); }
-  document.addEventListener("click", function (e) {
-    var a = e.target.closest && e.target.closest("[data-interest]");
-    if (!a || !sel) return;
-    var v = a.getAttribute("data-interest");
-    if ([].some.call(sel.options, function (o) { return o.value === v; })) { sel.value = v; syncBtn(); }
-  });
+  if (C.CONTACT_EMAIL) { var fm = $("footMail"); if (fm) fm.href = mailto(C.CONTACT_EMAIL, "Boris"); }
+  var pm = $("partnerMail");
+  if (pm) pm.href = mailto(C.PARTNER_EMAIL || C.CONTACT_EMAIL || "", "Boris partner program", "Name:\nCompany:\nReferral or white-label:\n");
 
-  /* ---------------------------------------------------------------- form */
-  var form = $("demoForm"), err = $("formErr"), thanks = $("thanks"), fb = $("mailFallback");
-  if (!form) return;
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    var bad = [];
-    ["f-name", "f-firm", "f-email"].forEach(function (id) {
-      var el = $(id), ok = el.value.trim() && (el.type !== "email" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value.trim()));
-      el.setAttribute("aria-invalid", ok ? "false" : "true");
-      if (!ok) bad.push(el);
-    });
-    if (bad.length) {
-      err.textContent = "Please add your name, firm and a work email.";
-      err.hidden = false;
-      bad[0].focus();
-      return;
-    }
-    err.hidden = true;
-    var data = new FormData(form);
-    var lines = [];
-    data.forEach(function (v, k) { if (v) lines.push(k + ": " + v); });
-    var interest = data.get("interest") || "A demo for my firm";
-    var partner = interest === "Becoming a partner";
-    var to = partner ? C.PARTNER_EMAIL || C.CONTACT_EMAIL : C.CONTACT_EMAIL;
-    fb.href = mailto(to || "", "Boris: " + interest, lines.join("\n"));
-    var done = function () {
-      form.hidden = true;
-      thanks.hidden = false;
-      thanks.focus();
+  /* ---------------------------------------------------------------- example calls (fictional firm + callers) */
+  // starts = when each line begins in audio/<id>.mp3 (seconds), from tmp/boris-site-v3/gen/calls-timing.json
+  var CALLS = {
+    late: {
+      title: "New caller · 11:40 PM", who: "Caller", total: 37.1,
+      starts: [0, 6.34, 12.91, 15.82, 21.55, 25.53, 29.92],
+      lines: [
+        "Alamo Injury Law, this is Boris. This call is recorded, and I'm an AI assistant. How can I help?",
+        "Hi. Um, I was just in a car wreck on 410. Somebody ran the red light and hit my side.",
+        "I'm sorry. Are you safe right now, and is anyone hurt?",
+        "I'm home. My neck and shoulder really hurt. The ambulance checked me, but I didn't go.",
+        "Thank you. If it gets worse tonight, please go to the ER. Did the police come?",
+        "Yes, I have the report number. And her insurance is Progressive.",
+        "Perfect. I'm sending this to Attorney Reyes now. The firm will call you by nine tomorrow morning, and I'm texting you a summary.",
+      ],
+      sumH: "New case · car accident · strong (84)",
+      sum: "Red-light crash on Loop 410 at about 11:30 PM. Neck and shoulder pain. EMS checked her at the scene, no ER yet. Police report taken.",
+      kv: [["Injuries", "Neck, shoulder"], ["Treatment", "None yet, told to go to ER if worse"], ["Other driver", "Insured (Progressive)"], ["Deadline", "Fine: crash was tonight"]],
+      acts: ["Texted Attorney Reyes: new strong case · 11:44 PM", "Texted the caller a summary and the 9 AM callback", "Created the lead in the case software", "Saved the call and transcript to the file", "Retainer waits for the attorney's OK"],
+    },
+    spanish: {
+      title: "New caller · in Spanish", who: "Caller", total: 34.2,
+      starts: [0, 4.67, 6.74, 9.22, 14.5, 18.38, 23.28, 25.72, 27.78],
+      lines: [
+        "Alamo Injury Law, this is Boris. This call is recorded, and I'm an AI assistant.",
+        "Hola. ¿Habla español?",
+        "Sí, claro. ¿En qué le puedo ayudar?",
+        "Me caí en una tienda. El piso estaba mojado y no había ningún aviso.",
+        "Lo siento mucho. ¿Cuándo pasó, y ya la vio un médico?",
+        "El martes. Fui a urgencias y me dijeron que es un esguince en la muñeca.",
+        "Entiendo. ¿La tienda hizo un reporte?",
+        "Sí, el gerente lo escribió.",
+        "Muy bien. Hoy mismo le paso todo a la abogada, y le mando un mensaje con el resumen en español.",
+      ],
+      en: [null, "Hi. Do you speak Spanish?", "Yes, of course. How can I help you?", "I fell in a store. The floor was wet and there was no warning sign.",
+        "I'm so sorry. When did it happen, and has a doctor seen you?", "Tuesday. I went to the ER and they said it's a sprained wrist.",
+        "I understand. Did the store write a report?", "Yes, the manager wrote it up.", "Very good. I'll pass everything to the attorney today, and text you a summary in Spanish."],
+      sumH: "New case · slip and fall · good (71)",
+      sum: "Fell on a wet floor in a store on Tuesday, no warning sign. ER visit, sprained wrist. The store manager wrote an incident report.",
+      kv: [["Language", "Spanish"], ["Injuries", "Sprained wrist"], ["Treatment", "ER on Tuesday"], ["Evidence", "Store incident report"]],
+      acts: ["Texted the caller a summary in Spanish", "Sent it to the attorney for review today", "Created the lead, marked Spanish-speaking", "Asked the attorney before sending a preservation letter for the store video"],
+    },
+    status: {
+      title: "Existing client · status call", who: "Marcus", total: 37.5,
+      starts: [0, 4.9, 10.36, 22.46, 24.43, 31.19, 32.84],
+      lines: [
+        "Alamo Injury Law, this is Boris. This call is recorded, and I'm an AI assistant.",
+        "Hey, it's Marcus Bell. I just want to know what's going on with my case. Nobody's called me.",
+        "Hi Marcus, I have your file. You finished physical therapy on October second, and we asked Southside Rehab for your final bills on the ninth. They haven't sent them yet, so I'll call them again today.",
+        "Okay. So what happens after that?",
+        "Once the bills are in, your attorney reviews everything for the demand. Want a call with Attorney Reyes? I have Thursday at two.",
+        "Thursday at two works.",
+        "Done. You'll get a text to confirm, and I've noted your question in your file.",
+      ],
+      sumH: "Existing client · status question · handled",
+      sum: "Marcus asked where his case stands. Boris answered from the Firm Brain: therapy finished 10/2, final bills requested 10/9 and still out.",
+      kv: [["Answered from", "Case file + his last 3 calls"], ["Booked", "Attorney Reyes, Thu 2:00 PM"], ["Next step", "Final bills, then demand review"]],
+      acts: ["Read his status from the Firm Brain", "Booked Marcus with Attorney Reyes, Thu 2:00 PM", "Texted Marcus the confirmation", "Called Southside Rehab again for the final bills", "Logged the call in his case file"],
+    },
+  };
+  var tabs = [].slice.call(document.querySelectorAll(".ctab"));
+  var tx = $("callTx"), au = $("callAudio"), playBtn = $("callPlay"), bar = $("callBar"), tEl = $("callTime");
+  if (tx && tabs.length) {
+    var cur = null, id = "late", playing = false, simT = 0, simAt = 0, raf = 0, useAudio = !!C.CALL_AUDIO, shownAll = false, done = false;
+    var fmt = function (t) { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) + ":" + (t % 60 < 10 ? "0" : "") + (t % 60); };
+    var icon = function (n) { playBtn.querySelector("use").setAttribute("href", "#i-" + n); };
+    var now = function () { return useAudio ? au.currentTime || 0 : simT + (playing ? (Date.now() - simAt) / 1000 : 0); };
+    var lineEl = function (k) {
+      var li = document.createElement("li"), boris = k % 2 === 0;
+      li.className = "tx__line" + (boris ? " tx__line--b" : "");
+      li.innerHTML = "<b></b><span></span>";
+      li.querySelector("b").textContent = boris ? "Boris" : cur.who;
+      li.querySelector("span").textContent = cur.lines[k];
+      if (cur.en && cur.en[k]) { var e = document.createElement("small"); e.textContent = cur.en[k]; li.appendChild(e); }
+      return li;
     };
-    if (C.DEMO_FORM_ACTION) {
-      fetch(C.DEMO_FORM_ACTION, { method: "POST", body: new URLSearchParams(data) }).then(done, done);
-    } else {
-      /* No endpoint yet: be honest, send it by email instead of a fake "we'll be in touch". */
-      thanks.querySelector("h3").textContent = "One last step: send it to us.";
-      thanks.querySelector("p").innerHTML = "";
-      var btn = document.createElement("a");
-      btn.className = "btn btn--primary"; btn.href = fb.href; btn.textContent = "Send my request by email";
-      thanks.querySelector("p").appendChild(btn);
-      done();
-    }
-  });
+    var shown = 0;
+    var show = function (t) {
+      var n = shownAll ? cur.lines.length : cur.starts.filter(function (s) { return s <= t + 0.05; }).length;
+      if (n && tx.querySelector(".tx__empty")) tx.innerHTML = "";
+      while (shown < n) tx.appendChild(lineEl(shown++));
+      [].forEach.call(tx.children, function (li, k) { li.classList.toggle("is-now", playing && k === n - 1); });
+      bar.style.width = Math.min(100, (t / cur.total) * 100) + "%";
+      tEl.textContent = fmt(t) + " / " + fmt(cur.total);
+    };
+    var loop = function () {
+      var t = now();
+      if (!useAudio && t >= cur.total) return end();
+      show(t);
+      if (playing) raf = requestAnimationFrame(loop);
+    };
+    var end = function () {
+      playing = false; cancelAnimationFrame(raf); simT = 0; done = true;
+      shownAll = true; show(cur.total); icon("rotate"); playBtn.setAttribute("aria-label", "Play the call again");
+    };
+    var stop = function () {
+      if (useAudio) au.pause(); else simT = now();
+      playing = false; cancelAnimationFrame(raf); icon("play"); playBtn.setAttribute("aria-label", "Play the call");
+      show(now());
+    };
+    var start = function () {
+      if (done || (shownAll && now() < 0.1)) { tx.innerHTML = ""; shown = 0; shownAll = false; done = false; if (useAudio) au.currentTime = 0; simT = 0; }
+      playing = true; icon("pause"); playBtn.setAttribute("aria-label", "Pause the call");
+      if (useAudio) {
+        var p = au.play();
+        if (p && p.catch) p.catch(function () { useAudio = false; simT = au.currentTime || 0; simAt = Date.now(); loop(); });
+      } else simAt = Date.now();
+      loop();
+    };
+    var load = function (k) {
+      if (playing) stop();
+      id = k; cur = CALLS[k]; shown = 0; shownAll = false; done = false; simT = 0; useAudio = !!C.CALL_AUDIO;
+      tx.innerHTML = '<li class="tx__empty">Press play to hear the call, or read the whole transcript.</li>';
+      if (useAudio) { au.src = "audio/" + k + ".mp3"; au.load(); }
+      icon("play"); playBtn.setAttribute("aria-label", "Play the call");
+      $("callTitle").textContent = cur.title;
+      $("callSumH").textContent = cur.sumH; $("callSum").textContent = cur.sum;
+      $("callKv").innerHTML = cur.kv.map(function (r) { return "<div><dt>" + esc(r[0]) + "</dt><dd>" + esc(r[1]) + "</dd></div>"; }).join("");
+      $("callActs").innerHTML = cur.acts.map(function (a) { return "<li>" + check + "<span>" + esc(a) + "</span></li>"; }).join("");
+      $("callPanel").setAttribute("aria-labelledby", "tab-" + k);
+      tabs.forEach(function (t) { var on = t.getAttribute("data-call") === k; t.setAttribute("aria-selected", on ? "true" : "false"); t.tabIndex = on ? 0 : -1; });
+      bar.style.width = "0%"; tEl.textContent = "0:00 / " + fmt(cur.total);
+    };
+    au.addEventListener("ended", end);
+    au.addEventListener("error", function () { if (useAudio && au.src) { useAudio = false; if (playing) { simT = 0; simAt = Date.now(); } } });
+    playBtn.addEventListener("click", function () { playing ? stop() : start(); });
+    $("callAll").addEventListener("click", function () { if (playing) stop(); shownAll = true; show(now()); });
+    tabs.forEach(function (t, k) {
+      t.addEventListener("click", function () { load(t.getAttribute("data-call")); });
+      t.addEventListener("keydown", function (e) {
+        var d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (!d) return;
+        var n = tabs[(k + d + tabs.length) % tabs.length]; n.focus(); n.click(); e.preventDefault();
+      });
+    });
+    load("late");
+  }
+
+  /* ---------------------------------------------------------------- Try Boris free: form -> instant demo access */
+  // Soft gate on a static site: the unlock lives in localStorage so returning visitors go straight in.
+  var KEY = "boris.try.v1", DEMO = C.DEMO_APP_URL || "https://boris148.github.io/boris-ai-demo/";
+  var store = {
+    get: function () { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { return null; } },
+    set: function (v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} },
+    clear: function () { try { localStorage.removeItem(KEY); } catch (e) {} },
+  };
+  var form = $("tryForm"), err = $("formErr"), panel = $("inPanel");
+  var ctas = [].slice.call(document.querySelectorAll('[data-cta="try"]'));
+  ctas.forEach(function (a) { a.setAttribute("data-label", a.textContent); });
+  var setCtas = function (on) {
+    ctas.forEach(function (a) {
+      if (on) { a.href = DEMO; a.target = "_blank"; a.rel = "noopener"; a.textContent = a.closest(".top") ? "Open the demo" : "Open the Boris demo"; }
+      else { a.href = "#try"; a.removeAttribute("target"); a.removeAttribute("rel"); a.textContent = a.getAttribute("data-label"); }
+    });
+  };
+  var lines = function (v) { return ["Name: " + v.name, "Firm: " + v.firm, "Email: " + v.email, "Phone: " + v.phone, "Role: " + v.role, v.attorneys ? "Attorneys: " + v.attorneys : "", "Wants: " + (v.intent === "call" ? "a demo call" : "to try Boris")].filter(Boolean).join("\n"); };
+  var showPanel = function (v, sent, focus) {
+    var first = (v.name || "").trim().split(/\s+/)[0];
+    var call = v.intent === "call";
+    $("inH").textContent = (focus === "back" ? "Welcome back" : "You're in") + (first ? ", " + first : "") + ".";
+    $("inP").textContent = call
+      ? "Pick a time for your walkthrough below. Meanwhile, the Boris demo is open to you: a sample firm with demo data."
+      : "The Boris demo opens in a new tab: a sample firm with demo data. Start on Today, then tap Ask and give him a job.";
+    var od = $("openDemo"), bk = $("bookCall");
+    od.href = DEMO;
+    bk.href = C.BOOKING_URL || mailto(C.CONTACT_EMAIL || "", "Boris walkthrough for " + (v.firm || "my firm"), lines(v) + "\n\nGood times for a 20-minute call:\n");
+    if (C.BOOKING_URL) { bk.target = "_blank"; bk.textContent = "Want a walkthrough? Book a 20-min call"; }
+    else bk.textContent = "Want a walkthrough? Email us for a 20-min call";
+    // one blue: the action they asked for
+    od.className = "btn btn--block " + (call ? "btn--ghost" : "btn--primary");
+    bk.className = "btn btn--block " + (call ? "btn--primary" : "btn--ghost");
+    if (call) od.parentNode.insertBefore(bk, od); else od.parentNode.insertBefore(od, bk);
+    var sb = $("sendBox");
+    sb.hidden = !!sent;
+    $("sendMail").href = mailto(C.CONTACT_EMAIL || "", "Boris: " + (call ? "demo call request" : "try free sign-up"), lines(v));
+    form.hidden = true; panel.hidden = false;
+    setCtas(true);
+    if (focus === "now") panel.focus();
+  };
+  if (form && panel) {
+    var saved = store.get();
+    if (saved && saved.email) showPanel(saved, saved.sent, "back");
+    var lastIntent = "try";
+    [$("btnTry"), $("btnCall")].forEach(function (b) { b.addEventListener("click", function () { lastIntent = b.value; }); });
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var intent = (e.submitter && e.submitter.value) || lastIntent;
+      var bad = [];
+      ["f-name", "f-firm", "f-email", "f-phone", "f-role"].forEach(function (fid) {
+        var el = $(fid), v = el.value.trim();
+        var ok = !!v && (el.type !== "email" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) && (el.type !== "tel" || v.replace(/\D/g, "").length >= 7);
+        el.setAttribute("aria-invalid", ok ? "false" : "true");
+        if (!ok) bad.push(el);
+      });
+      if (bad.length) {
+        err.textContent = "Please add your name, firm, a work email, a phone number and your role.";
+        err.hidden = false;
+        bad[0].focus();
+        return;
+      }
+      err.hidden = true;
+      var data = new FormData(form); data.set("intent", intent);
+      var v = { name: data.get("name"), firm: data.get("firm"), email: data.get("email"), phone: data.get("phone"), role: data.get("role"), attorneys: data.get("attorneys"), intent: intent, at: new Date().toISOString() };
+      var finish = function (sent) { v.sent = sent; store.set(v); showPanel(v, sent, "now"); };
+      if (C.DEMO_FORM_ACTION) {
+        // access never waits on our server: unlock either way; if the POST failed, offer the email fallback
+        fetch(C.DEMO_FORM_ACTION, { method: "POST", body: new URLSearchParams(data) })
+          .then(function (r) { finish(!!r.ok); }, function () { finish(false); });
+      } else finish(false); // no endpoint yet: be honest and offer "send my details by email"
+    });
+    $("notMe").addEventListener("click", function () {
+      store.clear(); setCtas(false); panel.hidden = true; form.hidden = false; form.reset(); $("f-name").focus();
+    });
+  }
+
+  /* ---------------------------------------------------------------- phone dock: one sticky "Try Boris free" */
+  var dock = $("dock"), hero = document.querySelector(".hero"), tryEl = $("try");
+  if (dock && hero && tryEl && "IntersectionObserver" in window) {
+    var heroIn = true, tryIn = false;
+    var sync = function () { dock.classList.toggle("is-on", !heroIn && !tryIn); };
+    new IntersectionObserver(function (es) { heroIn = es[0].isIntersecting; sync(); }).observe(hero);
+    new IntersectionObserver(function (es) { tryIn = es[0].isIntersecting; sync(); }, { rootMargin: "0px 0px 120px 0px" }).observe(tryEl);
+  }
 })();
