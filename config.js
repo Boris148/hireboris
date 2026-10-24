@@ -1,5 +1,5 @@
 /* Boris site settings. The only file to edit before publishing.
-   DEMO_APP_URL: where "Open the Boris demo" goes after the Try Boris free form (opens in a new tab).
+   DEMO_APP_URL: where "Explore the live demo" goes after the form (opens in a new tab).
    DEMO_FORM_ACTION: empty = nothing is sent anywhere; the visitor still gets demo access, plus a
      "send my details by email" button. Set it to a form endpoint (POST, application/x-www-form-urlencoded)
      to collect sign-ups; the field "intent" is "try" or "call".
@@ -63,12 +63,19 @@ window.BORIS_SITE = {
       foundingSetup: 2500,
       monthly: 3500,
       featured: true,
-      lines: ["Everything in Intake", "Case Manager: weekly client check-ins", "Marketing: lead follow-up and cost per case", "Works inside your case software"],
+      lines: ["Everything in Intake", "Case Manager: weekly client check-ins", "Marketing: where cases come from, cost per case", "Works inside your case software"],
     },
   ],
   ADDON: {
     name: "Paralegal seat",
     monthly: 2500,
     line: "Add to Full Team. Records, bills, liens, PIP and deadlines for up to 200 open files per seat.",
+  },
+  // DRAFT: the Ads Manager (media buyer) add-on. monthly: null = no price set yet, so it shows
+  // "Price on a demo call" even when SHOW_PRICES is on. Set a number to show it.
+  ADS_ADDON: {
+    name: "Ads Manager",
+    monthly: null,
+    line: "Add to any plan. Runs your Meta, Google Ads and Local Services accounts for signed cases. Ad spend is paid to the platforms, not to us.",
   },
 };

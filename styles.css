@@ -1,4 +1,4 @@
-/* Boris marketing site. Navy + white + ONE blue (#0b66b3) for the main action (Try Boris free). SF Pro system stack.
+/* Boris marketing site. Navy + white + ONE blue (#0b66b3) for the main action (Explore the live demo). SF Pro system stack.
    No gradients, glows or blur in the chrome. The Boris mark keeps its motion (from the app, pi-v6.css). */
 :root {
   --bg: #ffffff;
@@ -30,6 +30,8 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
+/* clip, not hidden: hidden can make body a scroll container in some engines, which breaks the sticky header */
+@supports (overflow: clip) { body { overflow-x: clip; } }
 img { max-width: 100%; height: auto; display: block; }
 a { color: var(--blue); }
 h1, h2, h3 { margin: 0; letter-spacing: -0.02em; line-height: 1.15; font-weight: 700; }
@@ -486,12 +488,7 @@ p { margin: 0; }
 .inpanel .linkbtn { justify-self: start; font-size: 15px; color: var(--text-2); }
 .partners-sec { background: #fff; }
 
-/* sticky phone CTA */
-.dock { display: none; }
 @media (max-width: 719px) {
-  .dock { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(255, 255, 255, 0.97); border-top: 1px solid var(--line); transform: translateY(110%); visibility: hidden; transition: transform 220ms var(--ease), visibility 0s linear 220ms; }
-  .dock.is-on { transform: none; visibility: visible; transition: transform 220ms var(--ease); }
-  .foot { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
   .ctab { padding: 8px; }
 }
 @media (max-width: 399px) {
@@ -523,7 +520,6 @@ p { margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .tx__line { animation: none; }
-  .dock, .dock.is-on { transition: none; }
 }
 /* long labels wrap instead of pushing the panel wider than the phone */
 .inpanel, .form, .cta__in > * { min-width: 0; }
@@ -531,3 +527,8 @@ p { margin: 0; }
 
 /* spam trap: off-screen, never seen or tabbed to by people */
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* v4 hero: the quiet secondary (a text link, not a second button) */
+.hero__alt { display: inline-flex; align-items: center; min-height: 48px; padding: 0 4px; font-size: 17px; font-weight: 500; color: var(--navy); text-decoration: underline; text-decoration-color: #b9c3d0; text-underline-offset: 4px; }
+.hero__alt:hover { text-decoration-color: var(--navy); }
+.addon .addon__2 { margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); }

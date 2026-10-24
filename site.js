@@ -1,5 +1,5 @@
 /* Boris site: the live "what Boris is doing" line, config flags, the example-call players, the missed-call math,
-   seats from config.js, and the Try Boris free form (instant demo access). No network calls unless DEMO_FORM_ACTION is set. */
+   seats from config.js, and the Explore the live demo form (instant demo access). No network calls unless DEMO_FORM_ACTION is set. */
 (function () {
   "use strict";
   var C = window.BORIS_SITE || {};
@@ -7,14 +7,15 @@
 
   /* ---------------------------------------------------------------- the live line (sample firm) */
   // kind: call = the B becomes a waveform; work = a ring sweeps; then a done check + a receipt row
+  // v4: every job, not just the phones (the hero should read "AI employee across the firm")
   var FEED = [
-    { job: "Paralegal", kind: "call", doing: "Calling Dr. Patel's records desk…", done: "Records requested · next follow-up Tue" },
-    { job: "Receptionist", kind: "call", doing: "Answering a new caller · rear-ended on I-35", done: "New case qualified · retainer sent for e-sign" },
+    { job: "Paralegal", kind: "work", doing: "Drafting a demand for Marcus B. from 214 pages of records…", done: "Demand draft ready for attorney review" },
+    { job: "Case Manager", kind: "call", doing: "Calling Methodist's records desk for the Martinez file…", done: "ER records promised by Friday · follow-up set" },
+    { job: "Ads Manager", kind: "work", doing: "Moving budget from truck ads to the Spanish ads that sign…", done: "$400 a week moved · losing ad paused" },
+    { job: "Intake", kind: "work", doing: "Sending Dana P.'s retainer the attorney approved…", done: "Retainer signed · case opened in the case software" },
+    { job: "Receptionist", kind: "call", doing: "Answering a new caller · rear-ended on I-35", done: "New case qualified · attorney texted" },
+    { job: "Marketing", kind: "work", doing: "Tying last week's signed cases to their sources…", done: "Cost per signed case by source · report ready" },
     { job: "Paralegal", kind: "work", doing: "Checking the PIP 30-day clock on 4 files…", done: "1 due Friday · attorney flagged" },
-    { job: "Case Manager", kind: "call", doing: "Weekly check-in with Luis R., in Spanish…", done: "Still treating · next visit Thu · logged" },
-    { job: "Paralegal", kind: "work", doing: "Asking St. Luke's for a lien balance…", done: "Lien balance saved to the file" },
-    { job: "Paralegal", kind: "work", doing: "Drafting a letter of representation…", done: "Letter ready for attorney sign-off" },
-    { job: "Intake", kind: "call", doing: "Calling back a lead from last night…", done: "Consult booked for 2:30 PM tomorrow" },
   ];
   var mark = $("liveMark"), line = $("liveLine"), text = $("liveText"), jobEl = $("liveJob"), list = $("liveDone");
   var LABEL = { idle: "Boris", call: "Boris is on a call", thinking: "Boris is working", done: "Boris finished" };
@@ -122,7 +123,7 @@
       return (s.foundingSetup ? money(s.foundingSetup) : "No") + " setup for founding firms <s>" + money(s.setup) + "</s>";
     };
     seatsEl.innerHTML = C.SEATS.map(function (s) {
-      // only two intents on the page: try free, or book a demo call. A Stripe link is the one exception.
+      // only two intents on the page: explore the live demo, or book a demo call. A Stripe link is the one exception.
       var btn = s.selfServe && C.STRIPE_CHECKOUT_URL
         ? '<a class="btn btn--dark btn--block" href="' + esc(C.STRIPE_CHECKOUT_URL) + '" rel="noopener">Start now</a>'
         : '<a class="btn ' + (s.featured ? "btn--dark" : "btn--ghost") + ' btn--block" href="#try" data-intent="call">Book a demo call</a>';
@@ -143,6 +144,11 @@
       addonEl.innerHTML =
         "<h3>" + esc(C.ADDON.name) + (show ? " <span>+ " + money(C.ADDON.monthly) + " /month per seat</span>" : "") + "</h3>" +
         "<p>" + esc(C.ADDON.line) + "</p>";
+    }
+    var ads = C.ADS_ADDON;
+    if (addonEl && ads) {
+      var adsPrice = show ? " <span>" + (typeof ads.monthly === "number" ? "+ " + money(ads.monthly) + " /month" : "Price on a demo call") + "</span>" : "";
+      addonEl.insertAdjacentHTML("beforeend", '<h3 class="addon__2">' + esc(ads.name) + adsPrice + "</h3><p>" + esc(ads.line) + "</p>");
     }
     if (show && C.ANNUAL_MONTHS_FREE) addonEl.insertAdjacentHTML("afterend", '<p class="fine fine--center">Pay for the year up front and get ' + C.ANNUAL_MONTHS_FREE + " months free.</p>");
     if (!show) addonEl.insertAdjacentHTML("afterend", '<p class="seats__cta"><a class="btn btn--ghost" href="#try" data-intent="call">Book a demo call for pricing</a></p>');
@@ -304,7 +310,7 @@
     load("late");
   }
 
-  /* ---------------------------------------------------------------- Try Boris free: form -> instant demo access */
+  /* ---------------------------------------------------------------- Explore the live demo: form -> instant demo access */
   // Soft gate on a static site: the unlock lives in localStorage so returning visitors go straight in.
   var KEY = "boris.try.v1", DEMO = C.DEMO_APP_URL || "https://boris148.github.io/boris-ai-demo/";
   var store = {
@@ -317,11 +323,13 @@
   ctas.forEach(function (a) { a.setAttribute("data-label", a.textContent); });
   var setCtas = function (on) {
     ctas.forEach(function (a) {
-      if (on) { a.href = DEMO; a.target = "_blank"; a.rel = "noopener"; a.textContent = a.closest(".top") ? "Open the demo" : "Open the Boris demo"; }
-      else { a.href = "#try"; a.removeAttribute("target"); a.removeAttribute("rel"); a.textContent = a.getAttribute("data-label"); }
+      // same words on a return visit; the button just opens the demo straight away
+      if (on) { a.href = DEMO; a.target = "_blank"; a.rel = "noopener"; }
+      else { a.href = "#try"; a.removeAttribute("target"); a.removeAttribute("rel"); }
+      a.textContent = a.getAttribute("data-label");
     });
   };
-  var lines = function (v) { return ["Name: " + v.name, "Firm: " + v.firm, "Email: " + v.email, "Phone: " + v.phone, "Role: " + v.role, v.attorneys ? "Attorneys: " + v.attorneys : "", "Wants: " + (v.intent === "call" ? "a demo call" : "to try Boris")].filter(Boolean).join("\n"); };
+  var lines = function (v) { return ["Name: " + v.name, "Firm: " + v.firm, "Email: " + v.email, "Phone: " + v.phone, "Role: " + v.role, v.attorneys ? "Attorneys: " + v.attorneys : "", "Wants: " + (v.intent === "call" ? "a demo call" : "the live demo")].filter(Boolean).join("\n"); };
   var showPanel = function (v, sent, focus) {
     var first = (v.name || "").trim().split(/\s+/)[0];
     var call = v.intent === "call";
@@ -340,7 +348,7 @@
     if (call) od.parentNode.insertBefore(bk, od); else od.parentNode.insertBefore(od, bk);
     var sb = $("sendBox");
     sb.hidden = !!sent;
-    $("sendMail").href = mailto(C.CONTACT_EMAIL || "", "Boris: " + (call ? "demo call request" : "try free sign-up"), lines(v));
+    $("sendMail").href = mailto(C.CONTACT_EMAIL || "", "Boris: " + (call ? "demo call request" : "live demo sign-up"), lines(v));
     form.hidden = true; panel.hidden = false;
     setCtas(true);
     if (focus === "now") panel.focus();
@@ -381,12 +389,9 @@
     });
   }
 
-  /* ---------------------------------------------------------------- phone dock: one sticky "Try Boris free" */
-  var dock = $("dock"), hero = document.querySelector(".hero"), tryEl = $("try");
-  if (dock && hero && tryEl && "IntersectionObserver" in window) {
-    var heroIn = true, tryIn = false;
-    var sync = function () { dock.classList.toggle("is-on", !heroIn && !tryIn); };
-    new IntersectionObserver(function (es) { heroIn = es[0].isIntersecting; sync(); }).observe(hero);
-    new IntersectionObserver(function (es) { tryIn = es[0].isIntersecting; sync(); }, { rootMargin: "0px 0px 120px 0px" }).observe(tryEl);
-  }
+  /* ---------------------------------------------------------------- hero: the quiet walkthrough link */
+  // goes straight to the booking page when there is one; otherwise to the form (the call intent)
+  var hb = $("heroBook");
+  if (hb && C.BOOKING_URL) { hb.href = C.BOOKING_URL; hb.target = "_blank"; hb.rel = "noopener"; }
+  else if (hb) hb.addEventListener("click", function () { var b = $("btnCall"); if (b) setTimeout(function () { b.focus({ preventScroll: true }); }, 400); });
 })();
