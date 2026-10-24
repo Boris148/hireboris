@@ -1,4 +1,4 @@
-/* Boris site: the live "what Boris is doing" line, seats from config.js, and the demo form.
+/* Boris site: the live "what Boris is doing" line, config flags, the missed-call math, seats from config.js, and the form.
    No network calls unless DEMO_FORM_ACTION is set. */
 (function () {
   "use strict";
@@ -72,6 +72,49 @@
     timer = setTimeout(step, 900);
   }
 
+  /* ---------------------------------------------------------------- config flags */
+  // data-flag="founding|guarantee|proof" shows only when that flag is on; "nofounding" only when founding is off.
+  var F = C.FOUNDING || {}, G = C.GUARANTEE || {};
+  var flags = { founding: !!F.on, guarantee: !!G.on, proof: !!C.SHOW_PROOF_SLOTS };
+  flags.nofounding = !flags.founding;
+  [].forEach.call(document.querySelectorAll("[data-flag]"), function (el) {
+    if (flags[el.getAttribute("data-flag")]) el.hidden = false;
+    else el.parentNode.removeChild(el); // removed, not just hidden (hidden <option>s still show on iOS)
+  });
+  var setText = function (id, t) { var el = $(id); if (el && t) el.textContent = t; };
+  var primary = flags.founding ? "Check if your market is open" : "Book a demo";
+  [].forEach.call(document.querySelectorAll('[data-cta="primary"]'), function (el) {
+    // the header button stays short so it fits next to the logo on phones
+    el.textContent = flags.founding && el.closest(".top") ? "Check your market" : primary;
+    el.setAttribute("data-interest", flags.founding ? "Check if my market is open" : "A demo for my firm");
+  });
+  if (flags.founding) {
+    setText("foundName", "One firm per market"); setText("foundLine", "Once your metro is taken, it's closed to other firms at founding terms.");
+    if (typeof F.spotsLeft === "number") { var fl = $("foundLeft"); fl.textContent = F.spotsLeft + " founding spots left"; fl.hidden = false; }
+    setText("offerEyebrow", "Founding firms"); setText("offerH", F.name);
+    setText("offerSub", "Sign more cases without the next hire. " + (F.line || ""));
+    setText("ctaH", "Check if your market is open.");
+    setText("ctaSub", "Tell us your city. We'll tell you if it's open, then show you Boris working on a firm like yours.");
+  }
+  if (flags.guarantee) {
+    setText("guarName", G.name); setText("guarLine", G.line); setText("guarFine", G.fine);
+    setText("faqGuar", (G.name ? G.name + ": " : "") + G.line + " " + (G.fine || ""));
+  }
+
+  /* ---------------------------------------------------------------- missed-call math */
+  var calc = $("calc");
+  if (calc) {
+    var num = function (id, max) { var v = parseFloat($(id).value); v = isFinite(v) && v > 0 ? v : 0; return max ? Math.min(v, max) : v; };
+    var run = function () {
+      var cases = num("c-calls") * (num("c-miss", 100) / 100) * (num("c-sign", 100) / 100);
+      $("calcCases").textContent = cases >= 10 ? Math.round(cases) : (Math.round(cases * 10) / 10).toString();
+      $("calcMoney").textContent = "$" + Math.round(cases * num("c-fee")).toLocaleString("en-US");
+    };
+    calc.addEventListener("input", run);
+    calc.addEventListener("submit", function (e) { e.preventDefault(); });
+    run();
+  }
+
   /* ---------------------------------------------------------------- seats */
   var money = function (n) { return "$" + n.toLocaleString("en-US"); };
   var check = '<svg class="i" aria-hidden="true"><use href="#i-circle-check"/></svg>';
@@ -80,18 +123,27 @@
   if (seatsEl && C.SEATS) {
     var show = !!C.SHOW_PRICES;
     $("priceSub").textContent = show
-      ? "Start with the phones. Add jobs when you're ready."
+      ? (flags.founding ? "Founding price, locked for as long as you stay. " : "") + "Start with the phones. Add jobs when you're ready."
       : "Plans from Answers to Full Team. Book a demo for pricing.";
+    var setupLine = function (s) {
+      var f = flags.founding && typeof s.foundingSetup === "number" && s.foundingSetup < s.setup;
+      if (!f) return money(s.setup) + " one-time setup";
+      return (s.foundingSetup ? money(s.foundingSetup) : "No") + " setup for founding firms <s>" + money(s.setup) + "</s>";
+    };
     seatsEl.innerHTML = C.SEATS.map(function (s) {
+      var btn = s.selfServe
+        ? '<a class="btn btn--primary btn--block" href="' + esc(C.STRIPE_CHECKOUT_URL || "#demo") + '"' + (C.STRIPE_CHECKOUT_URL ? ' rel="noopener"' : ' data-interest="Start now with Answers"') + ">Start now</a>"
+        : '<a class="btn ' + (s.featured ? "btn--dark" : "btn--ghost") + ' btn--block" href="#demo" data-interest="A demo for my firm">Book a demo</a>';
       return (
         '<article class="seat' + (s.featured ? " seat--featured" : "") + '">' +
         (s.featured ? '<span class="seat__tag">Most complete</span>' : "") +
         "<h3>" + esc(s.name) + '</h3><p class="seat__job">' + esc(s.job) + "</p>" +
         (show
-          ? '<p class="seat__price">' + money(s.monthly) + "<small> /month</small></p>" + '<p class="seat__setup">' + money(s.setup) + " one-time setup</p>"
+          ? (flags.founding ? '<p class="seat__label">Founding price</p>' : '<p class="seat__label">Draft price</p>') +
+            '<p class="seat__price">' + money(s.monthly) + "<small> /month</small></p>" + '<p class="seat__setup">' + setupLine(s) + "</p>"
           : "") +
         "<ul>" + s.lines.map(function (l) { return "<li>" + check + esc(l) + "</li>"; }).join("") + "</ul>" +
-        (show ? '<a class="btn ' + (s.featured ? "btn--primary" : "btn--ghost") + ' btn--block" href="#demo">Book a demo</a>' : "") +
+        (show ? btn : "") +
         "</article>"
       );
     }).join("");
@@ -100,20 +152,34 @@
         "<h3>" + esc(C.ADDON.name) + (show ? " <span>+ " + money(C.ADDON.monthly) + " /month per seat</span>" : "") + "</h3>" +
         "<p>" + esc(C.ADDON.line) + "</p>";
     }
-    if (!show) addonEl.insertAdjacentHTML("afterend", '<p class="seats__cta"><a class="btn btn--primary" href="#demo">Book a demo for pricing</a></p>');
+    if (show && C.ANNUAL_MONTHS_FREE) addonEl.insertAdjacentHTML("afterend", '<p class="fine fine--center">Pay for the year up front and get ' + C.ANNUAL_MONTHS_FREE + " months free.</p>");
+    if (!show) addonEl.insertAdjacentHTML("afterend", '<p class="seats__cta"><a class="btn btn--primary" href="#demo" data-interest="A demo for my firm">Book a demo for pricing</a></p>');
+    if (show && C.ANNUAL_MONTHS_FREE) setText("faqAnnual", "Pay a year up front and get " + C.ANNUAL_MONTHS_FREE + " months free.");
   }
 
-  /* ---------------------------------------------------------------- partner + mailto */
+  /* ---------------------------------------------------------------- mailto + "interest" links */
   var mailto = function (to, subject, body) {
     return "mailto:" + to + "?subject=" + encodeURIComponent(subject) + (body ? "&body=" + encodeURIComponent(body) : "");
   };
-  var pb = $("partnerBtn");
-  if (pb) pb.addEventListener("click", function () {
-    var sel = $("f-int");
-    if (sel) sel.value = "Becoming a partner";
+  if (C.CONTACT_EMAIL) {
+    var cl = $("contactLink"); if (cl) { cl.href = mailto(C.CONTACT_EMAIL, "Boris"); cl.textContent = C.CONTACT_EMAIL; }
+    var fm = $("footMail"); if (fm) fm.href = mailto(C.CONTACT_EMAIL, "Boris");
+  }
+  var sel = $("f-int"), formBtn = $("formBtn");
+  var BTN = {
+    "A demo for my firm": "Book a demo", "A free missed-call audit": "Get my free audit", "Start now with Answers": "Start now",
+    "Check if my market is open": "Check my market", "Becoming a partner": "Become a partner",
+  };
+  var syncBtn = function () { if (sel && formBtn) formBtn.textContent = BTN[sel.value] || "Send"; };
+  if (sel) { sel.addEventListener("change", syncBtn); syncBtn(); }
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("[data-interest]");
+    if (!a || !sel) return;
+    var v = a.getAttribute("data-interest");
+    if ([].some.call(sel.options, function (o) { return o.value === v; })) { sel.value = v; syncBtn(); }
   });
 
-  /* ---------------------------------------------------------------- demo form */
+  /* ---------------------------------------------------------------- form */
   var form = $("demoForm"), err = $("formErr"), thanks = $("thanks"), fb = $("mailFallback");
   if (!form) return;
   form.addEventListener("submit", function (e) {
@@ -134,9 +200,10 @@
     var data = new FormData(form);
     var lines = [];
     data.forEach(function (v, k) { if (v) lines.push(k + ": " + v); });
-    var partner = data.get("interest") === "Becoming a partner";
+    var interest = data.get("interest") || "A demo for my firm";
+    var partner = interest === "Becoming a partner";
     var to = partner ? C.PARTNER_EMAIL || C.CONTACT_EMAIL : C.CONTACT_EMAIL;
-    fb.href = mailto(to || "", partner ? "Boris partner" : "Boris demo", lines.join("\n"));
+    fb.href = mailto(to || "", "Boris: " + interest, lines.join("\n"));
     var done = function () {
       form.hidden = true;
       thanks.hidden = false;
