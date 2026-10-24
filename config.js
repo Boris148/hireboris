@@ -9,7 +9,7 @@
    STRIPE_CHECKOUT_URL: set to a Stripe Payment Link to show "Start now" on the Answers seat (prices on only).
    FOUNDING / GUARANTEE / SHOW_PROOF_SLOTS: off until confirmed. Proof slots are never filled with made-up results. */
 window.BORIS_SITE = {
-  DEMO_APP_URL: "https://boris148.github.io/boris-ai-demo/",
+  DEMO_APP_URL: "https://hireboris.com/demo/",
   DEMO_FORM_ACTION: "https://boris-leads.hireboris.workers.dev/",
   BOOKING_URL: "https://api.leadconnectorhq.com/widget/booking/ys5VGNHlqc0LOathxxMi",
   CALL_AUDIO: true,
