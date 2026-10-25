@@ -546,6 +546,17 @@ p { margin: 0; }
 }
 @media (max-width: 1023px) { .top__nav + .top__hire { margin-left: auto; } }
 .top__cta { flex: none; }
+/* go-live 10/25: Sign in → the Boris app (looks like the nav links; shown at every width) */
+.top__signin { margin-left: auto; flex: none; display: inline-flex; align-items: center; min-height: 44px; color: var(--text-2); text-decoration: none; font-size: 15px; font-weight: 500; padding: 0 8px; border-radius: 8px; }
+.top__signin:hover { color: var(--navy); background: var(--tint); }
+.top .top__signin ~ .btn { margin-left: 0; }
+@media (min-width: 1024px) { .top__nav + .top__signin { margin-left: 0; } }
+@media (max-width: 429px) {
+  .top__in { gap: 8px; }
+  .top__signin { padding: 0 6px; }
+  .top .top__cta { padding: 0 12px; }
+}
+@media (max-width: 379px) { .top__in { gap: 4px; } .top .top__cta { font-size: 15px; padding: 0 8px; } .top__signin { padding: 0 4px; font-size: 14px; } }
 .hero__hire { margin-top: 14px; font-size: 16px; color: var(--meta); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
 .hero__hire a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 600; color: var(--navy); text-decoration: none; }
 .hero__hire a:hover { text-decoration: underline; text-underline-offset: 4px; }
