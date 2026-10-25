@@ -134,6 +134,8 @@
     if (rs && rs.ref && Date.now() - rs.at < 90 * 864e5) ref = rs.ref;
   } catch (e) {}
   $("b-ref").value = ref;
+  // private test link (?pass=): sent with the checkout request only; the Worker decides whether it's valid
+  var pass = /^[A-Za-z0-9_-]{20,100}$/.test(q.get("pass") || "") ? q.get("pass") : "";
 
   function fail(msg, el) {
     err.textContent = msg;
@@ -157,6 +159,7 @@
     go.querySelector("span").textContent = "Opening secure checkout…";
     var body = { jobs: sel, billing: billing, ref: ref, agree: true, website: form.elements.website.value };
     FIELDS.forEach(function (f) { body[f] = v[f]; });
+    if (pass) body.pass = pass;
     fetch(C.CHECKOUT_API + "/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().catch(function () { return { ok: false }; }); })
       .then(function (d) {
