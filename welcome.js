@@ -1,4 +1,6 @@
-/* Welcome + setup checklist (/welcome/). After Stripe: ?s=<checkout session> → the Worker returns a private token
+/* Welcome (/welcome/). After Stripe: "Check your email" + Open your Boris app (app.hireboris.com). The setup
+   checklist is an optional head start below it: its answers prefill setup in the app (platform ONBOARD_KV, read-only).
+   ?s=<checkout session> → the Worker returns a private token
    and the URL becomes ?t=<token> (bookmarkable, also in Jeremy's alert). Each step autosaves to the Worker (KV);
    "Save and continue" marks it done → CrowdSync note. Only the sections for the jobs they bought are shown. */
 (function () {
@@ -9,6 +11,7 @@
   var NAMES = { receptionist: "Receptionist", intake: "Intake", case: "Case Manager", marketing: "Marketing", ads: "Ads Manager", full: "Full Team" };
   var q = new URLSearchParams(location.search);
   var token = q.get("t"), state = null;
+  var cameBack = !!token; // the private link = they want the questions
 
   function show(id) { ["welLoad", "welNone", "welMain"].forEach(function (x) { $(x).hidden = x !== id; }); }
   function get(path) { return fetch(API + path).then(function (r) { return r.json().then(function (d) { d.status = r.status; return d; }); }); }
@@ -62,7 +65,16 @@
     status();
     var first = steps.filter(function (s) { return !s.hidden && !done(s); })[0];
     if (first) open(first, false);
+    if (cameBack || Object.keys(state.steps || {}).length) showList(false);
   }
+  function showList(focus) {
+    $("welList").hidden = false;
+    $("welHead").classList.add("is-open");
+    $("welStart").hidden = true;
+    $("welStart").setAttribute("aria-expanded", "true");
+    if (focus) $("welList").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  $("welStart").addEventListener("click", function () { showList(true); });
   function done(sec) { var s = state.steps[sec.getAttribute("data-step")]; return !!(s && s.complete); }
   function status() {
     var vis = steps.filter(function (s) { return !s.hidden; }), req = vis.filter(function (s) { return s.getAttribute("data-step") !== "kickoff"; });

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Welcome to Boris · Setup checklist</title>
-<meta name="description" content="Your Boris setup checklist.">
+<title>Welcome to Boris · Open your Boris app</title>
+<meta name="description" content="Welcome to Boris. Open your Boris app from the email we sent you.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light">
@@ -30,35 +30,49 @@
 </header>
 <main id="main" class="wel">
   <div class="wrap wrap--narrow">
-    <div class="wel__load" id="welLoad"><p>Loading your setup checklist…</p></div>
+    <div class="wel__load" id="welLoad"><p>Loading…</p></div>
 
     <div class="wel__none" id="welNone" hidden>
-      <h1 class="buy__h">Your setup checklist</h1>
-      <p class="sub">Open the link from your Boris confirmation to see your checklist. Can't find it? Email <a href="mailto:boris@socialelitemarketinggroup.com">boris@socialelitemarketinggroup.com</a> and we'll send it again.</p>
-      <p class="sub" id="welWait" hidden>Your payment is still going through. This page will update in a few seconds.</p>
+      <div class="wel__hero">
+        <span class="wel__ok" aria-hidden="true"><svg class="i"><use href="#i-mail"/></svg></span>
+        <h1 class="buy__h">Check your email</h1>
+        <p class="sub">Check your email: we sent you a link to open your Boris app. Can't find it? Email <a href="mailto:boris@socialelitemarketinggroup.com">boris@socialelitemarketinggroup.com</a> and we'll send it again.</p>
+        <p class="sub" id="welWait" hidden>Your payment is still going through. This page will update in a few seconds.</p>
+        <div class="wel__cta"><a class="btn btn--primary" href="https://app.hireboris.com">Open your Boris app<svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></div>
+      </div>
     </div>
 
     <div id="welMain" hidden>
       <div class="wel__hero">
         <span class="wel__ok" aria-hidden="true"><svg class="i"><use href="#i-circle-check"/></svg></span>
         <p class="eyebrow" id="welFirm"></p>
-        <h1 class="buy__h">You're in. Boris starts within 3 business days.</h1>
-        <p class="sub">Hired: <b id="welJobs"></b>. Fill in this checklist so we can build him on your firm. It saves as you go, so you can stop and come back.</p>
-        <div class="wel__link">
-          <p>Your private link to come back to this page:</p>
-          <div class="wel__copy"><input id="welUrl" readonly aria-label="Your private checklist link"><button class="btn btn--ghost btn--sm" type="button" id="welCopy">Copy</button></div>
-        </div>
+        <h1 class="buy__h">You're in. Check your email.</h1>
+        <p class="sub">Check your email: we sent you a link to open your Boris app.</p>
+        <p class="wel__jobs">Hired: <b id="welJobs"></b></p>
+        <div class="wel__cta"><a class="btn btn--primary" id="welApp" href="https://app.hireboris.com">Open your Boris app<svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></div>
+        <p class="wel__fine">Sign in with the email you used to pay. No email? Check spam, or write to <a href="mailto:boris@socialelitemarketinggroup.com">boris@socialelitemarketinggroup.com</a>.</p>
         <ol class="wel__next">
-          <li><b>1</b><span>You fill in the checklist below (about 10 minutes).</span></li>
-          <li><b>2</b><span>We set up your phone line, his voice and your Firm Brain.</span></li>
-          <li><b>3</b><span>We test him on sample calls with you, then turn him on job by job.</span></li>
+          <li><b>1</b><span>Open the email and sign in to your Boris app.</span></li>
+          <li><b>2</b><span>Boris walks you through setup in a short conversation.</span></li>
+          <li><b>3</b><span>He builds each job you hired, and you turn them on one by one.</span></li>
         </ol>
+      </div>
+
+      <div class="wel__head" id="welHead">
+        <div><h2>Want a head start? Answer a few questions now</h2><p>Optional. Boris uses these answers in the app, so he won't ask twice. It saves as you go.</p></div>
+        <button class="btn btn--ghost" type="button" id="welStart" aria-expanded="false" aria-controls="welList">Answer a few questions</button>
+      </div>
+
+      <div id="welList" hidden>
+      <div class="wel__link">
+        <p>Your private link to come back to these questions:</p>
+        <div class="wel__copy"><input id="welUrl" readonly aria-label="Your private link to these questions"><button class="btn btn--ghost btn--sm" type="button" id="welCopy">Copy</button></div>
       </div>
 
       <div class="wel__prog"><span id="welProgT">0 of 0 done</span><i><b id="welProgB"></b></i></div>
       <div class="wel__done" id="welDone" hidden role="status">
         <svg class="i" aria-hidden="true"><use href="#i-circle-check"/></svg>
-        <div><h2>All set. Thank you.</h2><p>We have what we need and we're building your Boris now. We'll be in touch within one business day to set up your phone line and test calls.</p></div>
+        <div><h2>All set. Thank you.</h2><p>Boris has your answers. Open your Boris app and he'll pick up from here.</p></div>
       </div>
 
       <div class="steps" id="steps">
@@ -176,6 +190,7 @@
             </div>
           </form>
         </section>
+      </div>
       </div>
     </div>
   </div>

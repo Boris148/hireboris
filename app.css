@@ -101,6 +101,15 @@ fieldset.field legend { font-size: 15px; font-weight: 600; padding: 0; margin-bo
 .wel__next { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; }
 .wel__next li { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; color: var(--text-2); }
 .wel__next b { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--navy); color: var(--navy); display: grid; place-items: center; font-size: 14px; flex: none; }
+.wel__cta { margin-top: 8px; }
+.wel__cta .btn .i { width: 18px; height: 18px; margin-left: 6px; }
+.wel__jobs { font-size: 16px; color: var(--text-2); }
+.wel__fine { font-size: 14px; color: var(--meta); overflow-wrap: anywhere; }
+.wel__head { margin-top: 36px; border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.wel__head > div { flex: 1 1 260px; min-width: 0; }
+.wel__head h2 { font-size: 19px; }
+.wel__head p { color: var(--text-2); margin-top: 4px; font-size: 15px; }
+#welList .wel__link { margin-top: 18px; }
 .wel__prog { margin: 32px 0 12px; display: grid; gap: 8px; font-size: 15px; font-weight: 600; }
 .wel__prog i { display: block; height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
 .wel__prog b { display: block; height: 100%; width: 0; background: var(--green); transition: width 300ms var(--ease); }
