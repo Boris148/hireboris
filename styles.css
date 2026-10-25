@@ -288,6 +288,11 @@ p { margin: 0; }
 .cmp__p { font-size: 13px; color: var(--text-2); line-height: 1.25; display: inline-block; }
 .cmp thead .cmp__us { color: var(--navy); font-size: 15px; font-weight: 700; }
 .cmp .cmp__us { background: #eef4fa; }
+.cmp__h { margin-top: 56px; font-size: 24px; letter-spacing: -0.02em; color: var(--text); }
+.cmp__sub { margin-top: 10px; color: var(--text-2); font-size: 16px; max-width: 640px; }
+.cmp--2 { margin-top: 24px; }
+.cmp--2 tbody th { width: 52%; }
+.cmp__names { display: block; margin-top: 4px; font-size: 11px; font-weight: 500; color: var(--text-3, #6b7a90); letter-spacing: 0; }
 
 /* missed-call math */
 .math { display: grid; gap: 28px; }
