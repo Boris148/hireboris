@@ -39,7 +39,8 @@
       <a href="#trust">Guardrails</a>
       <a href="#faq">FAQ</a>
     </nav>
-    <a class="btn btn--primary btn--sm" href="#try" data-cta="try">Explore the live demo</a>
+    <a class="btn btn--ghost btn--sm top__hire" href="/start/" data-start="">Hire Boris now</a>
+    <a class="btn btn--primary btn--sm top__cta" href="#try" data-cta="try">Explore the live demo</a>
   </div>
 </header>
 
@@ -57,6 +58,7 @@
         <a class="hero__alt" id="heroBook" href="#try">or book a 20-minute walkthrough</a>
       </div>
       <p class="hero__note">The real Boris app on a sample PI firm. No card, no sales call needed.</p>
+      <p class="hero__hire" data-start-wrap><a href="/start/" data-start="">Ready to start? Hire Boris now<svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg></a> <span>Live within 3 business days.</span></p>
     </div>
 
     <div class="live" aria-label="What Boris is doing right now (sample firm)">
@@ -75,6 +77,18 @@
       </ol>
       <p class="live__foot">Sample firm. Nobody real was called.</p>
     </div>
+  </div>
+</section>
+
+<!-- 1b · the day-at-a-firm video (real demo app; captions burned in; muted loop, tap = from the top) -->
+<section class="vidsec" id="video" aria-labelledby="video-h">
+  <div class="wrap">
+    <h2 class="vidsec__h" id="video-h">Watch Boris work a day at a firm</h2>
+    <div class="vid">
+      <video id="dayVideo" muted loop playsinline preload="none" aria-describedby="video-cap"></video>
+      <button class="vid__btn" id="dayVideoBtn" type="button"><svg class="i" aria-hidden="true"><use href="#i-rotate"/></svg><span>Watch from the start</span></button>
+    </div>
+    <p class="vidsec__cap" id="video-cap">One night and morning at a sample firm, recorded in the real Boris app: a 2:07 AM call, a signed case, a client check-in, an ad budget change he asked about first, and the morning report.</p>
   </div>
 </section>
 
@@ -183,7 +197,7 @@
         <p class="outcome">Your media buyer, who sees every lead all the way to a signed retainer. An add-on job.</p>
       </div>
     </article>
-    <p class="next"><a class="btn btn--primary" href="#try" data-cta="try">Explore the live demo</a><span>Open every job in the demo app.</span></p>
+    <p class="next"><a class="btn btn--primary" href="#try" data-cta="try">Explore the live demo</a><a class="btn btn--ghost" href="/start/" data-start="">Hire Boris now</a><span>Hire one job or the whole team. Live within 3 business days.</span></p>
   </div>
 </section>
 
@@ -410,6 +424,7 @@
             <li><b>3</b><span>Like it? Book a 20-minute walkthrough for your firm.</span></li>
           </ol>
           <a class="btn btn--primary btn--block" href="#try" data-cta="try">Explore the live demo</a>
+          <p class="start__hire"><a href="/start/" data-start="">Already sold? Hire Boris now</a></p>
         </div>
       </aside>
     </div>
@@ -494,10 +509,10 @@
       <details><summary>Can he give legal advice or settle a case?<svg class="i" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><p>No. He never gives legal advice, never negotiates, never accepts an offer and never signs or files anything. Those go to your attorneys.</p></details>
       <details><summary>Does he speak Spanish?<svg class="i" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><p>Yes. He answers and checks in with clients in English or Spanish, and texts summaries in the caller's language.</p></details>
       <details><summary>What about medical records?<svg class="i" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><p>Boris handles no medical records until the privacy agreements (BAAs) are signed for your firm. Every request he sends uses your firm's own authorization forms.</p></details>
-      <details><summary>How is it priced?<svg class="i" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><p>A setup fee and a flat monthly price per seat. Never a percentage of fees or settlements. <span id="faqAnnual"></span></p></details>
+      <details><summary>How is it priced?<svg class="i" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><p>A flat monthly price per job, plus a one-time launch fee. Never a percentage of fees or settlements. <span id="faqAnnual"></span></p></details>
       <details data-flag="guarantee" hidden><summary>Is there a guarantee?<svg class="i" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><p id="faqGuar"></p></details>
       <details data-flag="founding" hidden><summary>What does "one firm per market" mean?<svg class="i" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><p>We take one personal injury firm per metro as a founding firm. Your competitors across town can't get Boris at founding terms while you're with us.</p></details>
-      <details><summary>How do we start?<svg class="i" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><p>Try the demo today. If it fits, book a walkthrough. We set Boris up on your phones and software, load your Firm Brain, test him on your calls, then turn him on job by job.</p></details>
+      <details><summary>How do we start?<svg class="i" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><p>Two ways. Already sure? <a href="/start/" data-start="">Hire Boris online</a>: pick his jobs, check out, fill in a short setup checklist, and he's live within 3 business days. Want to see it fit your firm first? Explore the demo or book a 20-minute walkthrough. Either way we set Boris up on your phones and software, load your Firm Brain, test him on your calls, then turn him on job by job.</p></details>
     </div>
   </div>
 </section>
@@ -563,7 +578,7 @@
 <footer class="foot">
   <div class="wrap foot__in">
     <p class="foot__brand">Boris · by Social Elite</p>
-    <nav aria-label="Footer"><a href="#jobs">Jobs</a><a href="#brain">Firm Brain</a><a href="#calls">Calls</a><a href="#trust">Guardrails</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a href="#partners">Partners</a><a id="footMail" href="#try">Contact</a></nav>
+    <nav aria-label="Footer"><a href="#jobs">Jobs</a><a href="#brain">Firm Brain</a><a href="#calls">Calls</a><a href="#trust">Guardrails</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a href="#partners">Partners</a><a href="/start/" data-start="">Hire Boris</a><a id="footMail" href="#try">Contact</a><a href="/terms/">Service Agreement</a><a href="/privacy/">Privacy</a></nav>
     <p class="foot__fine">© 2026 Social Elite. Boris is not a law firm and does not give legal advice. Screens, calls and chats show fictional firms, people and demo data. Example call voices are AI-generated. Icons by Lucide (ISC License).</p>
   </div>
 </footer>

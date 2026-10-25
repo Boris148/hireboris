@@ -532,3 +532,29 @@ p { margin: 0; }
 .hero__alt { display: inline-flex; align-items: center; min-height: 48px; padding: 0 4px; font-size: 17px; font-weight: 500; color: var(--navy); text-decoration: underline; text-decoration-color: #b9c3d0; text-underline-offset: 4px; }
 .hero__alt:hover { text-decoration-color: var(--navy); }
 .addon .addon__2 { margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
+
+/* ---------------------------------------------------------------- v5: hire now, video */
+.top__hire { display: none; }
+@media (min-width: 720px) {
+  .top__hire { display: inline-flex; margin-left: auto; }
+  .top__nav + .top__hire { margin-left: 0; }
+}
+@media (max-width: 1023px) { .top__nav + .top__hire { margin-left: auto; } }
+.top__cta { flex: none; }
+.hero__hire { margin-top: 14px; font-size: 16px; color: var(--meta); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.hero__hire a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 600; color: var(--navy); text-decoration: none; }
+.hero__hire a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.hero__hire .i { width: 18px; height: 18px; }
+.start__hire { margin-top: 10px; text-align: center; font-size: 16px; }
+.start__hire a { display: inline-flex; align-items: center; min-height: 44px; color: var(--navy); font-weight: 600; text-underline-offset: 4px; }
+.addon__go { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; font-weight: 600; color: var(--navy); white-space: nowrap; text-underline-offset: 4px; }
+.addon__go .i { width: 16px; height: 16px; }
+
+.vidsec { padding: 8px 0 56px; }
+.vidsec__h { font-size: clamp(22px, 4.6vw, 30px); letter-spacing: -0.025em; text-align: center; margin-bottom: 18px; }
+.vid { position: relative; margin: 0 auto; max-width: 1040px; aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden; background: var(--navy); border: 1px solid var(--line); }
+@media (max-width: 640px) { .vid { aspect-ratio: 4 / 5; max-width: 480px; } } /* same breakpoint as site.js picks the 4:5 cut */
+.vid video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.vid__btn { position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 99px; border: 0; background: rgba(15, 27, 45, 0.86); color: #fff; font: 600 15px/1 var(--font); cursor: pointer; }
+.vid__btn .i { width: 16px; height: 16px; }
+.vidsec__cap { max-width: 720px; margin: 14px auto 0; text-align: center; font-size: 15px; color: var(--meta); }

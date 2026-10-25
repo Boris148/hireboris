@@ -112,27 +112,34 @@
   var check = '<svg class="i" aria-hidden="true"><use href="#i-circle-check"/></svg>';
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
   var seatsEl = $("seats"), addonEl = $("addon");
+  // v5: "Hire Boris now" → /start/ (self-serve checkout) when START_URL is set; the walkthrough stays for bigger firms
+  var startUrl = function (job) { return C.START_URL ? C.START_URL + (job ? "?job=" + encodeURIComponent(job) : "") : ""; };
+  [].forEach.call(document.querySelectorAll("[data-start]"), function (a) {
+    if (!C.START_URL) { a.hidden = true; return; }
+    a.href = startUrl(a.getAttribute("data-start"));
+  });
   if (seatsEl && C.SEATS) {
     var show = !!C.SHOW_PRICES;
+    var fee = C.LAUNCH_FEE;
     $("priceSub").textContent = show
-      ? (flags.founding ? "Founding price, locked for as long as you stay. " : "") + "Start with the phones. Add jobs when you're ready."
+      ? (flags.founding ? "Founding price, locked for as long as you stay. " : "") + "Start with the phones, or hire him for one job. Live within 3 business days."
       : "Plans from Answers to Full Team. Book a demo call for pricing.";
     var setupLine = function (s) {
       var f = flags.founding && typeof s.foundingSetup === "number" && s.foundingSetup < s.setup;
-      if (!f) return money(s.setup) + " one-time setup";
-      return (s.foundingSetup ? money(s.foundingSetup) : "No") + " setup for founding firms <s>" + money(s.setup) + "</s>";
+      if (!f) return money(s.setup) + " launch fee" + (C.ANNUAL_MONTHS_FREE ? ", waived on annual" : "");
+      return (s.foundingSetup ? money(s.foundingSetup) : "No") + " launch fee for founding firms <s>" + money(s.setup) + "</s>";
     };
     seatsEl.innerHTML = C.SEATS.map(function (s) {
-      // only two intents on the page: explore the live demo, or book a demo call. A Stripe link is the one exception.
-      var btn = s.selfServe && C.STRIPE_CHECKOUT_URL
-        ? '<a class="btn btn--dark btn--block" href="' + esc(C.STRIPE_CHECKOUT_URL) + '" rel="noopener">Start now</a>'
+      // prices on + START_URL: hire online; otherwise the only intent is a demo call
+      var btn = C.START_URL && s.start
+        ? '<a class="btn ' + (s.featured ? "btn--dark" : "btn--ghost") + ' btn--block" href="' + esc(startUrl(s.start)) + '">Hire Boris now</a>'
         : '<a class="btn ' + (s.featured ? "btn--dark" : "btn--ghost") + ' btn--block" href="#try" data-intent="call">Book a demo call</a>';
       return (
         '<article class="seat' + (s.featured ? " seat--featured" : "") + '">' +
         (s.featured ? '<span class="seat__tag">Most complete</span>' : "") +
         "<h3>" + esc(s.name) + '</h3><p class="seat__job">' + esc(s.job) + "</p>" +
         (show
-          ? (flags.founding ? '<p class="seat__label">Founding price</p>' : '<p class="seat__label">Draft price</p>') +
+          ? (flags.founding ? '<p class="seat__label">Founding price</p>' : "") +
             '<p class="seat__price">' + money(s.monthly) + "<small> /month</small></p>" + '<p class="seat__setup">' + setupLine(s) + "</p>"
           : "") +
         "<ul>" + s.lines.map(function (l) { return "<li>" + check + esc(l) + "</li>"; }).join("") + "</ul>" +
@@ -140,20 +147,69 @@
         "</article>"
       );
     }).join("");
-    if (addonEl && C.ADDON) {
-      addonEl.innerHTML =
-        "<h3>" + esc(C.ADDON.name) + (show ? " <span>+ " + money(C.ADDON.monthly) + " /month per seat</span>" : "") + "</h3>" +
-        "<p>" + esc(C.ADDON.line) + "</p>";
+    var more = function (job) {
+      return show && C.START_URL ? ' <a class="addon__go" href="' + esc(startUrl(job)) + '">Hire Boris now<svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>' : "";
+    };
+    var ads = C.ADS_ADDON, cm = (C.JOBS || []).filter(function (j) { return j.id === "case" || j.id === "marketing"; });
+    if (addonEl && show && cm.length) {
+      addonEl.innerHTML = cm.map(function (j, k) {
+        return '<h3' + (k ? ' class="addon__2"' : "") + ">" + esc(j.name) + " <span>" + money(j.monthly) + " /month on its own</span></h3><p>" + esc(j.line) + more(j.id) + "</p>";
+      }).join("");
     }
-    var ads = C.ADS_ADDON;
     if (addonEl && ads) {
-      var adsPrice = show ? " <span>" + (typeof ads.monthly === "number" ? "+ " + money(ads.monthly) + " /month" : "Price on a demo call") + "</span>" : "";
-      addonEl.insertAdjacentHTML("beforeend", '<h3 class="addon__2">' + esc(ads.name) + adsPrice + "</h3><p>" + esc(ads.line) + "</p>");
+      var adsPrice = show ? " <span>" + (typeof ads.monthly === "number" ? "+ " + money(ads.monthly) + " /month with any job" + (ads.standalone ? " · " + money(ads.standalone) + " on its own" : "") : "Price on a demo call") + "</span>" : "";
+      addonEl.insertAdjacentHTML("beforeend", '<h3' + (addonEl.innerHTML ? ' class="addon__2"' : "") + ">" + esc(ads.name) + adsPrice + "</h3><p>" + esc(ads.line) + more("ads") + "</p>");
     }
-    if (show && C.ANNUAL_MONTHS_FREE) addonEl.insertAdjacentHTML("afterend", '<p class="fine fine--center">Pay for the year up front and get ' + C.ANNUAL_MONTHS_FREE + " months free.</p>");
+    if (addonEl && C.ADDON) {
+      addonEl.insertAdjacentHTML("beforeend",
+        '<h3 class="addon__2">' + esc(C.ADDON.name) + (show ? " <span>+ " + money(C.ADDON.monthly) + " /month per seat</span>" : "") + "</h3>" +
+        "<p>" + esc(C.ADDON.line) + (show ? ' <a class="addon__go" href="' + esc(C.BOOKING_URL || "#try") + '"' + (C.BOOKING_URL ? ' target="_blank" rel="noopener"' : ' data-intent="call"') + ">Book a walkthrough<svg class=\"i\" aria-hidden=\"true\"><use href=\"#i-arrow-right\"/></svg></a>" : "") + "</p>");
+    }
+    if (show && C.ANNUAL_MONTHS_FREE) addonEl.insertAdjacentHTML("afterend", '<p class="fine fine--center">Pay for the year up front: ' + C.ANNUAL_MONTHS_FREE + " months free and no launch fee.</p>" +
+      (C.BOOKING_URL ? '<p class="fine fine--center">Bigger firm, or want it tailored? <a href="' + esc(C.BOOKING_URL) + '" target="_blank" rel="noopener">Book a 20-minute walkthrough</a>.</p>' : ""));
     if (!show) addonEl.insertAdjacentHTML("afterend", '<p class="seats__cta"><a class="btn btn--ghost" href="#try" data-intent="call">Book a demo call for pricing</a></p>');
-    if (show && C.ANNUAL_MONTHS_FREE) setText("faqAnnual", "Pay a year up front and get " + C.ANNUAL_MONTHS_FREE + " months free.");
+    if (show && C.ANNUAL_MONTHS_FREE) setText("faqAnnual", (fee ? "Online orders pay a " + money(fee) + " launch fee once. " : "") + "Pay a year up front and get " + C.ANNUAL_MONTHS_FREE + " months free, with no launch fee.");
   }
+
+  /* ---------------------------------------------------------------- referral (?ref=) */
+  // a partner's link to any page credits them at checkout (/start/ reads it). Attribution only, no discount.
+  try {
+    var refQ = new URLSearchParams(location.search).get("ref");
+    if (refQ && /^[A-Za-z0-9_-]{1,40}$/.test(refQ)) localStorage.setItem("boris.ref", JSON.stringify({ ref: refQ.toLowerCase(), at: Date.now() }));
+  } catch (e) {}
+
+  /* ---------------------------------------------------------------- the day-at-a-firm video */
+  // muted + looped with burned-in captions; loads only near the viewport; phone gets the 4:5 cut
+  var vid = $("dayVideo");
+  if (vid && C.VIDEO) {
+    var vbox = vid.parentNode, small = window.matchMedia("(max-width: 640px)").matches;
+    var cut = small ? "4x5" : "16x9";
+    vbox.classList.add("vid--" + cut);
+    vid.poster = "video/boris-day-" + cut + ".webp";
+    var loadVid = function () {
+      if (vid.getAttribute("src")) return;
+      vid.src = "video/boris-day-" + cut + ".mp4";
+      var p = vid.play();
+      if (p && p.catch) p.catch(function () {});
+    };
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) { loadVid(); if (vid.paused && vid.muted) { var q = vid.play(); if (q && q.catch) q.catch(function () {}); } }
+          else if (vid.muted && !vid.paused) vid.pause();
+        });
+      }, { rootMargin: "200px" });
+      io.observe(vid);
+    } else loadVid();
+    var vbtn = $("dayVideoBtn");
+    if (vbtn) vbtn.addEventListener("click", function () {
+      loadVid();
+      vid.currentTime = 0;
+      if (C.VIDEO_SOUND) { vid.muted = false; vid.loop = false; vid.controls = true; vbtn.hidden = true; }
+      var q = vid.play(); if (q && q.catch) q.catch(function () {});
+    });
+    if (C.VIDEO_SOUND && vbtn) vbtn.querySelector("span").textContent = "Watch with sound";
+  } else if (vid) vid.closest("section").hidden = true;
 
   /* ---------------------------------------------------------------- mail + booking links */
   // the booking page fills in the details they already gave us
