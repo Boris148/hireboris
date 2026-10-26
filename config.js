@@ -16,6 +16,9 @@ window.BORIS_SITE = {
   DEMO_FORM_ACTION: "https://boris-leads.hireboris.workers.dev/",
   BOOKING_URL: "https://api.leadconnectorhq.com/widget/booking/ys5VGNHlqc0LOathxxMi",
   CALL_AUDIO: true,
+  // v12: a 4th example call, a REAL test call. null = off: keep it off on every publish until the caller
+  // OKs their voice going public. Staging (tmp/boris-v12-calls-cpc/gen/site-stage.mjs) injects it.
+  REAL_CALL: null,
   SHOW_PRICES: true,
   START_URL: "/start/",
   CHECKOUT_API: "https://boris-checkout.hireboris.workers.dev",

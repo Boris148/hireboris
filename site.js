@@ -282,6 +282,18 @@
       acts: ["Read his status from the Firm Brain", "Booked Marcus with Attorney Reyes, Thu 2:00 PM", "Texted Marcus the confirmation", "Called Southside Rehab again for the final bills", "Logged the call in his case file"],
     },
   };
+  // v12: a 4th example, a REAL test call, only when config.js sets REAL_CALL (off on every publish; the
+  // staging server injects it with its own audio URL). Nothing about it is in the page otherwise.
+  if (C.REAL_CALL && C.REAL_CALL.lines && document.querySelector(".calls__tabs")) {
+    CALLS.real = C.REAL_CALL;
+    var rt = document.createElement("button");
+    rt.className = "ctab"; rt.setAttribute("role", "tab"); rt.id = "tab-real"; rt.setAttribute("aria-controls", "callPanel");
+    rt.setAttribute("aria-selected", "false"); rt.setAttribute("data-call", "real"); rt.tabIndex = -1;
+    rt.innerHTML = "<b></b><span></span>";
+    rt.querySelector("b").textContent = C.REAL_CALL.tabB || "A real call";
+    rt.querySelector("span").textContent = C.REAL_CALL.tabS || "Real test call";
+    var tl = document.querySelector(".calls__tabs"); tl.appendChild(rt); tl.classList.add("is-4");
+  }
   var tabs = [].slice.call(document.querySelectorAll(".ctab"));
   var tx = $("callTx"), au = $("callAudio"), playBtn = $("callPlay"), bar = $("callBar"), tEl = $("callTime");
   if (tx && tabs.length) {
@@ -290,7 +302,7 @@
     var icon = function (n) { playBtn.querySelector("use").setAttribute("href", "#i-" + n); };
     var now = function () { return useAudio ? au.currentTime || 0 : simT + (playing ? (Date.now() - simAt) / 1000 : 0); };
     var lineEl = function (k) {
-      var li = document.createElement("li"), boris = k % 2 === 0;
+      var li = document.createElement("li"), boris = cur.whos ? cur.whos[k] === "boris" : k % 2 === 0;
       li.className = "tx__line" + (boris ? " tx__line--b" : "");
       li.innerHTML = "<b></b><span></span>";
       li.querySelector("b").textContent = boris ? "Boris" : cur.who;
@@ -335,7 +347,8 @@
       if (playing) stop();
       id = k; cur = CALLS[k]; shown = 0; shownAll = false; done = false; simT = 0; useAudio = !!C.CALL_AUDIO;
       tx.innerHTML = '<li class="tx__empty">Press play to hear the call, or read the whole transcript.</li>';
-      if (useAudio) { au.src = "audio/" + k + ".mp3"; au.load(); }
+      if (useAudio) { au.src = cur.audio || "audio/" + k + ".mp3"; au.load(); }
+      var tg = document.querySelector(".call__tag"); if (tg) { if (!tg.getAttribute("data-def")) tg.setAttribute("data-def", tg.textContent); tg.textContent = cur.tag || tg.getAttribute("data-def"); }
       icon("play"); playBtn.setAttribute("aria-label", "Play the call");
       $("callTitle").textContent = cur.title;
       $("callSumH").textContent = cur.sumH; $("callSum").textContent = cur.sum;
