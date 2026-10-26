@@ -1,105 +1,95 @@
-/* Build your Boris (/start/): pick jobs → running total → firm details → Stripe Checkout via the boris-checkout Worker.
+/* Hire Boris (/start/), 10/26 ONE PLAN: the Boris plan (preselected) + Ads Manager toggle + monthly/annual, or the quiet
+   Ads-Manager-only path → firm details → Stripe Checkout via the boris-checkout Worker (offer "boris").
    Prices here are for display; the Worker recomputes the cart from its own table (projects/boris-checkout-worker/src/prices.js).
-   ?job=<id> or ?jobs=a,b&billing=annual preselects (the demo's Hire sheet and Stripe's back button use these). */
+   ?jobs=a,b&billing=annual preselects (the demo's Hire sheet, the home page and Stripe's back button use these): only "ads"
+   = Ads Manager alone; anything else (boris, or an old job id like receptionist/intake/full) = the plan, plus Ads if listed. */
 (function () {
   "use strict";
   var C = window.BORIS_SITE || {};
   var $ = function (id) { return document.getElementById(id); };
   var money = function (n) { return "$" + Number(n).toLocaleString("en-US"); };
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
-  var JOBS = C.JOBS || [], byId = {};
-  JOBS.forEach(function (j) { byId[j.id] = j; });
-  var FULL = byId.full, FEE = C.LAUNCH_FEE || 0, ANNUAL_X = 12 - (C.ANNUAL_MONTHS_FREE || 0);
-  var ORDER = ["full", "intake", "receptionist", "case", "marketing", "ads"];
+  var byId = {};
+  (C.JOBS || []).forEach(function (j) { byId[j.id] = j; });
+  var PLAN = C.PLAN || {}, PJ = byId.boris || {}, ADS = byId.ads || {}, EARLY = C.EARLY_ACCESS;
+  var FEE = C.LAUNCH_FEE || 0, ANNUAL_X = 12 - (C.ANNUAL_MONTHS_FREE || 0);
   var STATES = "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY".split(" ");
 
-  var sel = [], billing = "monthly", saved = 0;
+  var plan = true, ads = false, billing = "monthly";
   var store = {
     get: function () { try { return JSON.parse(sessionStorage.getItem("boris.start") || "null") || {}; } catch (e) { return {}; } },
     set: function (v) { try { sessionStorage.setItem("boris.start", JSON.stringify(v)); } catch (e) {} },
   };
+  // what we send the Worker (it prices it the same way: the plan absorbs its jobs, Ads is the add-on next to it)
+  var picked = function () { return (plan ? ["boris"] : []).concat(ads ? ["ads"] : []); };
+  // any old job list → plan/ads (old links and stored carts keep working)
+  function fromJobs(list) {
+    list = (list || []).filter(Boolean);
+    if (!list.length) return null;
+    var onlyAds = list.every(function (id) { return id === "ads"; });
+    return { plan: !onlyAds, ads: list.indexOf("ads") >= 0 || list.indexOf("growth") >= 0 };
+  }
 
   /* ---------------------------------------------------------------- the cart (mirrors the Worker) */
-  // sel = what they tapped; cart() = what they'll pay for, computed exactly like the Worker does:
-  // Intake includes Receptionist; Full Team covers the four core jobs and kicks in when they'd cost as much;
-  // Ads Manager is the add-on price next to any other job.
-  var cartIds = [];
-  function cart() {
-    var s = sel.filter(function (id, k) { return byId[id] && !byId[id].walkthrough && sel.indexOf(id) === k; });
-    sel = s.slice();
-    if (s.indexOf("intake") >= 0) s = s.filter(function (id) { return id !== "receptionist"; });
-    saved = 0;
-    if (s.indexOf("full") >= 0) s = s.filter(function (id) { return FULL.covers.indexOf(id) < 0; });
-    else if (FULL) {
-      var core = s.filter(function (id) { return FULL.covers.indexOf(id) >= 0; });
-      var sum = core.reduce(function (t, id) { return t + byId[id].monthly; }, 0);
-      if (sum >= FULL.monthly) { saved = sum - FULL.monthly; s = ["full"].concat(s.filter(function (id) { return FULL.covers.indexOf(id) < 0; })); }
-    }
-    s.sort(function (a, b) { return ORDER.indexOf(a) - ORDER.indexOf(b); });
-    cartIds = s;
-  }
   function lines() {
-    var others = cartIds.filter(function (id) { return id !== "ads"; }).length;
-    return cartIds.map(function (id) {
-      var j = byId[id], add = id === "ads" && others > 0 && j.addon;
-      var m = add ? j.addon : j.monthly;
-      return { id: id, name: j.name + (add ? " (added on)" : ""), monthly: m, amount: billing === "annual" ? m * ANNUAL_X : m };
-    });
-  }
-  // what a covered/included card says while its parent is in the cart
-  function coveredBy(id) {
-    if (id !== "full" && cartIds.indexOf("full") >= 0 && FULL.covers.indexOf(id) >= 0) return "Full Team";
-    if (id === "receptionist" && cartIds.indexOf("intake") >= 0) return "Intake";
-    return "";
+    var L = [];
+    if (plan) L.push({ id: "boris", name: PJ.name || "Boris", monthly: PJ.monthly });
+    if (ads) L.push({ id: "ads", name: ADS.name + (plan ? " (added on)" : ""), monthly: plan ? ADS.addon : ADS.monthly });
+    return L.map(function (l) { l.amount = billing === "annual" ? l.monthly * ANNUAL_X : l.monthly; return l; });
   }
 
-  /* ---------------------------------------------------------------- job cards */
+  /* ---------------------------------------------------------------- plan + add-on cards */
   var jobsEl = $("jobs");
+  var per = function (m) { return money(billing === "annual" ? m * ANNUAL_X : m) + "<small>" + (billing === "annual" ? " /year" : " /month") + "</small>"; };
+  function card(id, on, name, price, line, fine, feat) {
+    return '<button type="button" class="job' + (on ? " is-on" : "") + (feat ? " job--feat" : "") + '" data-job="' + id + '" aria-pressed="' + on + '">' +
+      '<span class="job__top"><span class="job__tick" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></span><span class="job__name">' + esc(name) + '</span><span class="job__price">' + price + "</span></span>" +
+      '<span class="job__line">' + esc(line) + "</span>" + (fine ? '<span class="job__fine">' + fine + "</span>" : "") + "</button>";
+  }
   function renderJobs() {
-    jobsEl.innerHTML = JOBS.map(function (j) {
-      var m = j.id === "ads" && j.addon && cartIds.some(function (id) { return id !== "ads"; }) ? j.addon : j.monthly; // add-on price next to any job
-      var price = '<p class="job__price">' + money(billing === "annual" ? m * ANNUAL_X : m) + "<small>" + (billing === "annual" ? " /year" : " /month") + "</small></p>";
-      if (j.walkthrough) {
-        return '<div class="job job--walk"><div class="job__top"><h3>' + esc(j.name) + "</h3>" + price + '</div><p class="job__line">' + esc(j.line) + "</p>" +
-          '<a class="job__walk" href="' + esc(C.BOOKING_URL || "/#try") + '" target="_blank" rel="noopener">Starts with a 20-minute walkthrough<svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></div>';
-      }
-      var auto = j.id === "full" && sel.indexOf("full") < 0 && cartIds.indexOf("full") >= 0;
-      var on = sel.indexOf(j.id) >= 0 || auto, cov = coveredBy(j.id), lock = cov && !on;
-      var fine = j.id === "ads" && j.fine ? '<p class="job__fine">' + esc(billing === "annual" ? money(j.addon * ANNUAL_X) + "/yr when added to any other job (" + money(j.monthly * ANNUAL_X) + "/yr on its own). Ad spend is paid to the platforms, not to us." : j.fine.replace("$1,000/mo when added to any other job.", money(j.addon) + "/mo when added to any other job, " + money(j.monthly) + "/mo on its own.")) + "</p>" : "";
-      return '<button type="button" class="job' + (on && !cov ? " is-on" : "") + (cov ? " is-cov" : "") + (j.featured ? " job--feat" : "") + '" data-job="' + j.id + '" aria-pressed="' + (on || !!cov) + '"' + (lock ? ' aria-disabled="true"' : "") + ">" +
-        '<span class="job__top"><span class="job__tick" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></span><span class="job__name">' + esc(j.name) + "</span>" + price + "</span>" +
-        '<span class="job__line">' + esc(j.line) + "</span>" + fine +
-        (cov ? '<span class="job__cov">Included in ' + cov + "</span>" : "") +
-        (auto ? '<span class="job__cov">Switched on for you: it costs less than those jobs on their own</span>' : "") + "</button>";
-    }).join("");
+    var adsM = plan ? ADS.addon : ADS.monthly;
+    jobsEl.innerHTML =
+      card("boris", plan, PLAN.name || "Boris", per(PJ.monthly), PLAN.line || "", plan ? "" : "Tap to add the full Boris plan.", true) +
+      card("ads", ads, ADS.name, (plan ? "+ " : "") + per(adsM), (C.ADS_ADDON || {}).line || "",
+        esc(plan ? money(ADS.addon) + "/mo added to Boris (" + money(ADS.monthly) + "/mo on its own)." : "On its own: " + money(ADS.monthly) + "/mo.")) +
+      (EARLY ? '<div class="job job--walk"><div class="job__top"><h3>' + esc(EARLY.name) + '</h3><p class="job__price"><small>' + esc(EARLY.label) + '</small></p></div><p class="job__line">' + esc(EARLY.line) + "</p>" +
+        '<a class="job__walk" href="' + esc(C.BOOKING_URL || "/#try") + '" target="_blank" rel="noopener">Starts with a 20-minute walkthrough<svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></div>' : "");
+    var alone = $("adsAlone");
+    if (alone) alone.innerHTML = plan
+      ? esc((C.ADS_ADDON || {}).alone || "Just want Boris on your ads?") + ' <button type="button" class="linkbtn" data-mode="ads">Ads Manager alone, ' + money(ADS.monthly) + "/mo</button>"
+      : 'Want every job? <button type="button" class="linkbtn" data-mode="plan">Get the Boris plan, ' + money(PJ.monthly) + "/mo</button>";
   }
   jobsEl.addEventListener("click", function (e) {
     var b = e.target.closest("button[data-job]");
-    if (!b || b.getAttribute("aria-disabled") === "true") return;
-    var id = b.getAttribute("data-job"), k = sel.indexOf(id);
-    if (k >= 0) sel.splice(k, 1); else sel.push(id);
+    if (!b) return;
+    var id = b.getAttribute("data-job");
+    if (id === "boris") plan = !plan; else ads = !ads;
     update(id);
+  });
+  $("adsAlone").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-mode]");
+    if (!b) return;
+    if (b.getAttribute("data-mode") === "ads") { plan = false; ads = true; } else { plan = true; ads = false; } // the link's price is what they get
+    update(b.getAttribute("data-mode") === "ads" ? "ads" : "boris");
   });
 
   /* ---------------------------------------------------------------- summary */
   function renderSum() {
-    var L = lines(), per = L.reduce(function (t, l) { return t + l.amount; }, 0), annual = billing === "annual";
+    var L = lines(), tot = L.reduce(function (t, l) { return t + l.amount; }, 0), annual = billing === "annual";
     var fee = annual || !L.length ? 0 : FEE;
     $("sumEmpty").hidden = !!L.length;
     $("sumLines").innerHTML = L.map(function (l) { return "<li><span>" + esc(l.name) + "</span><b>" + money(l.amount) + (annual ? "/yr" : "/mo") + "</b></li>"; }).join("");
-    $("sumBundle").hidden = !saved;
-    if (saved) $("sumBundle").textContent = "You're getting Full Team. It covers those jobs and saves " + money(saved) + "/mo" + (billing === "annual" ? " (" + money(saved * ANNUAL_X) + "/yr)." : ".");
+    $("sumBundle").hidden = true;
     $("sumTot").hidden = !L.length;
     $("sumPerL").textContent = annual ? "Yearly" : "Monthly";
-    $("sumPer").textContent = money(per) + (annual ? "/yr" : "/mo");
+    $("sumPer").textContent = money(tot) + (annual ? "/yr" : "/mo");
     $("sumFee").innerHTML = annual ? "<s>" + money(FEE) + "</s> waived" : money(FEE);
-    $("sumToday").textContent = money(per + fee);
+    $("sumToday").textContent = money(tot + fee);
     $("sumThen").hidden = !L.length;
-    $("sumThen").textContent = annual ? "Renews at " + money(per) + " a year. That's 2 months free." : "Then " + money(per) + " a month. Switch to annual to skip the launch fee and get 2 months free.";
+    $("sumThen").textContent = annual ? "Renews at " + money(tot) + " a year. That's 2 months free." : "Then " + money(tot) + " a month. Switch to annual to skip the launch fee and get 2 months free.";
     $("buyGo").disabled = false;
   }
   function update(changed) {
-    cart();
     renderJobs(); // re-rendered cards lose focus: put it back on the one just tapped
     renderSum();
     if (changed) { var b = jobsEl.querySelector('[data-job="' + changed + '"]'); if (b) b.focus({ preventScroll: true }); }
@@ -118,7 +108,7 @@
   $("b-state").insertAdjacentHTML("beforeend", STATES.map(function (s) { return "<option>" + s + "</option>"; }).join(""));
   var FIELDS = ["firm", "name", "email", "phone", "state", "attorneys"];
   function persist() {
-    var v = { jobs: sel, billing: billing };
+    var v = { jobs: picked(), billing: billing };
     FIELDS.forEach(function (f) { v[f] = form.elements[f].value; });
     store.set(v);
   }
@@ -146,7 +136,7 @@
     e.preventDefault();
     err.hidden = true;
     if (form.elements.website.value) return;
-    if (!sel.length) { fail("Pick at least one job for Boris."); jobsEl.querySelector("button").focus(); return; }
+    if (!picked().length) { fail("Pick the Boris plan or the Ads Manager."); jobsEl.querySelector("button").focus(); return; }
     var v = {};
     FIELDS.forEach(function (f) { v[f] = form.elements[f].value.trim(); });
     var miss = ["firm", "name", "email", "phone", "state"].filter(function (f) { return !v[f]; })[0];
@@ -157,7 +147,7 @@
     if (!C.CHECKOUT_API) return fail("Online checkout isn't switched on yet. Email boris@socialelitemarketinggroup.com and we'll set you up.");
     go.disabled = true;
     go.querySelector("span").textContent = "Opening secure checkout…";
-    var body = { jobs: sel, billing: billing, ref: ref, agree: true, website: form.elements.website.value };
+    var body = { jobs: picked(), offer: "boris", billing: billing, ref: ref, agree: true, website: form.elements.website.value };
     FIELDS.forEach(function (f) { body[f] = v[f]; });
     if (pass) body.pass = pass;
     fetch(C.CHECKOUT_API + "/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -175,9 +165,8 @@
 
   /* ---------------------------------------------------------------- start */
   var s0 = store.get();
-  var pre = (q.get("jobs") || q.get("job") || "").split(",").filter(function (id) { return byId[id]; });
-  if (pre.length === 1 && byId[pre[0]].walkthrough) pre = []; // Paralegal starts with a walkthrough
-  sel = pre.length ? pre : (s0.jobs || []);
+  var pre = fromJobs((q.get("jobs") || q.get("job") || "").split(",").filter(function (id) { return byId[id]; })) || fromJobs(s0.jobs);
+  if (pre) { plan = pre.plan; ads = pre.ads; } // default: the plan, preselected
   billing = q.get("billing") === "annual" || (!q.get("billing") && s0.billing === "annual") ? "annual" : "monthly";
   [].forEach.call(document.querySelectorAll("[data-bill]"), function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-bill") === billing ? "true" : "false"); });
   FIELDS.forEach(function (f) { if (s0[f]) form.elements[f].value = s0[f]; });

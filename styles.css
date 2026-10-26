@@ -180,6 +180,10 @@ p { margin: 0; }
 .addon h3 { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
 .addon h3 span { font-size: 16px; font-weight: 600; color: var(--text-2); letter-spacing: 0; }
 .addon p { color: var(--text-2); font-size: 16px; }
+/* 10/26 one plan: a single plan card, centered, with the Ads Manager + early access box under it */
+.seats.seats--one { grid-template-columns: minmax(0, 1fr); max-width: 640px; margin-inline: auto; }
+.seats--one + .addon { max-width: 640px; margin-inline: auto; }
+.addon p.addon__alone { font-size: 15px; color: var(--meta); }
 
 /* partners */
 .partners { display: grid; gap: 28px; }

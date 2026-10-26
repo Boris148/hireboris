@@ -8,7 +8,7 @@
    SHOW_PRICES: true = prices show (approved 10/24); false = "Book a demo call for pricing".
    START_URL: the "Build your Boris" self-serve checkout page. Empty = no "Hire Boris now" buttons anywhere.
    CHECKOUT_API: the boris-checkout Cloudflare Worker (projects/boris-checkout-worker). It recomputes every
-     price itself from its own table (src/prices.js), so JOBS below is for display only: keep them in sync.
+     price itself from its own table (src/prices.js), so JOBS/PLAN/ADS_ADDON below are for display only: keep them in sync.
    VIDEO: the "Watch Boris work a day at a firm" video under the hero. VIDEO_SOUND = true when it has a voiceover.
    FOUNDING / GUARANTEE / SHOW_PROOF_SLOTS: off until confirmed. Proof slots are never filled with made-up results. */
 window.BORIS_SITE = {
@@ -40,62 +40,51 @@ window.BORIS_SITE = {
     fine: "Counts every call your firm forwards to Boris. You get the full call log, so you can check it yourself.",
   },
 
-  // Prices approved 10/24 09:57. Flat monthly price, never a cut of fees or settlements.
-  // Online orders pay one launch fee (LAUNCH_FEE), waived on annual. Bigger custom deals are quoted on the walkthrough.
+  // 10/26 ONE PLAN (Jeremy 03:50): Boris $1,997/mo, everything included; annual = 10x ($19,970/yr, 2 months free).
+  // Ads Manager: + $1,000/mo on the plan, $1,500/mo on its own. Case Manager + Paralegal: early access, walkthrough only.
+  // Flat monthly price, never a cut of fees or settlements. Online orders pay one launch fee, waived on annual.
   LAUNCH_FEE: 995,
-  // "Build your Boris" (/start/). Display copy + prices; the Worker's src/prices.js is what's charged.
-  // includes: picking it removes those from the cart. covers (Full Team): auto-switch when they'd cost as much.
+  // The checkout Worker's price table, mirrored (projects/boris-checkout-worker/src/prices.js is what's charged; keep in sync).
+  // Only `sold` jobs are offered on the site; the rest stay in the Worker for old ?jobs= links, pilots and old carts.
   JOBS: [
-    { id: "receptionist", name: "Receptionist", line: "Every call answered, 24/7, in English or Spanish. Books callbacks, routes the urgent ones.", monthly: 1750 },
-    { id: "intake", name: "Intake", line: "Includes the Receptionist. Qualifies new cases on the call and sends the retainer once you OK it.", monthly: 2500, includes: ["receptionist"] },
-    { id: "case", name: "Case Manager", line: "Weekly client check-ins, chases records and bills, answers \"where's my case?\" from the file.", monthly: 1500 },
-    { id: "marketing", name: "Marketing", line: "The analyst. Where your cases come from and what each signed case cost. Reviews and referrals.", monthly: 750 },
-    { id: "ads", name: "Ads Manager", line: "Runs your Meta, Google Ads and Local Services ads for signed cases. Asks before spending more.", monthly: 1500, addon: 1000, fine: "$1,000/mo when added to any other job. Ad spend is paid to the platforms, not to us." },
-    { id: "full", name: "Full Team", line: "Receptionist, Intake, Case Manager and Marketing. Every core job, one price.", monthly: 3500, covers: ["receptionist", "intake", "case", "marketing"], featured: true },
-    { id: "paralegal", name: "Paralegal", line: "Records, bills, liens, PIP and deadlines for up to 200 open files. Needs your case software hookup.", monthly: 2500, walkthrough: true },
+    { id: "boris", name: "Boris", monthly: 1997, sold: true, jobs: ["intake", "receptionist", "marketing"] },
+    { id: "ads", name: "Ads Manager", monthly: 1500, addon: 1000, sold: true },
+    { id: "receptionist", name: "Receptionist", monthly: 1750 },
+    { id: "intake", name: "Intake", monthly: 2500 },
+    { id: "case", name: "Case Manager", monthly: 1500 },
+    { id: "marketing", name: "Marketing", monthly: 750 },
+    { id: "full", name: "Full Team", monthly: 3500 },
+    { id: "growth", name: "Growth", monthly: 3500 },
   ],
-  SEATS: [
-    {
-      id: "answers",
-      name: "Answers",
-      job: "Receptionist",
-      start: "receptionist",
-      setup: 995,
-      foundingSetup: 0,
-      monthly: 1750,
-      selfServe: true,
-      lines: ["Answers every call, 24/7", "English and Spanish", "Takes the message, books the callback", "Every call summed up and logged"],
-    },
-    {
-      id: "intake",
-      name: "Intake",
-      job: "Receptionist + Intake",
-      start: "intake",
-      setup: 995,
-      monthly: 2500,
-      lines: ["Everything in Answers", "Qualifies new cases on the call", "Sends the retainer once you OK it", "Calls back leads until they sign or say no"],
-    },
-    {
-      id: "full",
-      name: "Full Team",
-      job: "Receptionist, Intake, Case Manager, Marketing",
-      start: "full",
-      setup: 995,
-      monthly: 3500,
-      featured: true,
-      lines: ["Everything in Intake", "Case Manager: weekly client check-ins", "Marketing: where cases come from, cost per case", "Works inside your case software"],
-    },
-  ],
-  ADDON: {
-    name: "Paralegal seat",
-    monthly: 2500,
-    line: "Records, bills, liens, PIP and deadlines for up to 200 open files per seat. Starts with a 20-minute walkthrough (it needs your case software hookup and a signed BAA).",
+  // the one plan card (home #pricing) and the plan on /start/
+  PLAN: {
+    id: "boris",
+    name: "Boris",
+    tag: "One plan · everything included",
+    job: "Every job below, one flat price",
+    line: "Receptionist, Intake and Marketing, every call recorded and transcribed, the Firm Brain, chat and the app for your whole firm.",
+    lines: [
+      "Receptionist: every call answered 24/7, in English or Spanish, after hours too",
+      "Intake: qualifies new cases on the call and sends the retainer once you OK it",
+      "Marketing: where your cases come from and what each signed case cost",
+      "Every call recorded and transcribed",
+      "The Firm Brain: your rules, team and open cases",
+      "Just tell him: chat with Boris and he gets it done",
+      "The Boris app for your whole firm, no per-user fees",
+    ],
   },
-  // The Ads Manager (media buyer): $1,000/mo added to any job, $1,500/mo on its own.
+  // Ads Manager (media buyer): added to Boris, or on its own (the quiet path for firms that only want the ads run)
   ADS_ADDON: {
     name: "Ads Manager",
     monthly: 1000,
     standalone: 1500,
-    line: "Add to any plan. Runs your Meta, Google Ads and Local Services accounts for signed cases. Ad spend is paid to the platforms, not to us.",
+    line: "Boris runs your Meta, Google Ads and Local Services ads for signed cases, and asks before spending more. Ad spend is paid to the platforms, not to us.",
+    alone: "Just want Boris on your ads?",
+  },
+  // not sold online: shown without prices, starts with the walkthrough
+  EARLY_ACCESS: {
+    name: "Case Manager and Paralegal",
+    label: "Early access · pilot firms",
+    line: "Client check-ins, records, bills, liens and deadlines. We're turning these on with a few pilot firms first (the Paralegal needs your case software hookup and a signed BAA).",
   },
 };

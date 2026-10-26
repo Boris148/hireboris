@@ -59,6 +59,7 @@ fieldset.field legend { font-size: 15px; font-weight: 600; padding: 0; margin-bo
 .job--walk { cursor: default; background: var(--tint); border-style: dashed; }
 .job__walk { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 600; color: var(--navy); text-underline-offset: 4px; }
 .job__walk .i { width: 16px; height: 16px; }
+.linkbtn { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--navy); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 
 .agree { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; cursor: pointer; padding: 6px 0; }
 .agree input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--navy); }

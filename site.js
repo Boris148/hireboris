@@ -118,56 +118,49 @@
     if (!C.START_URL) { a.hidden = true; return; }
     a.href = startUrl(a.getAttribute("data-start"));
   });
-  if (seatsEl && C.SEATS) {
+  // 10/26 ONE PLAN: one plan card (Boris, everything included) + Ads Manager (added on, or alone) + early access jobs
+  if (seatsEl && C.PLAN) {
     var show = !!C.SHOW_PRICES;
-    var fee = C.LAUNCH_FEE;
+    var fee = C.LAUNCH_FEE, P = C.PLAN, ads = C.ADS_ADDON, early = C.EARLY_ACCESS;
+    var X = 12 - (C.ANNUAL_MONTHS_FREE || 0);
+    var planJob = (C.JOBS || []).filter(function (j) { return j.id === P.id; })[0] || {};
     $("priceSub").textContent = show
-      ? (flags.founding ? "Founding price, locked for as long as you stay. " : "") + "Start with the phones, or hire him for one job. Live within 3 business days."
-      : "Plans from Answers to Full Team. Book a demo call for pricing.";
-    var setupLine = function (s) {
-      var f = flags.founding && typeof s.foundingSetup === "number" && s.foundingSetup < s.setup;
-      if (!f) return money(s.setup) + " launch fee" + (C.ANNUAL_MONTHS_FREE ? ", waived on annual" : "");
-      return (s.foundingSetup ? money(s.foundingSetup) : "No") + " launch fee for founding firms <s>" + money(s.setup) + "</s>";
+      ? (flags.founding ? "Founding price, locked for as long as you stay. " : "") + "Every job in one plan. Live within 3 business days of finishing your setup checklist."
+      : "One plan, everything included. Book a demo call for pricing.";
+    seatsEl.classList.add("seats--one");
+    var btn = C.START_URL
+      ? '<a class="btn btn--dark btn--block" href="' + esc(startUrl()) + '">Hire Boris now</a>'
+      : '<a class="btn btn--dark btn--block" href="#try" data-intent="call">Book a demo call</a>';
+    seatsEl.innerHTML =
+      '<article class="seat seat--featured">' +
+      '<span class="seat__tag">' + esc(P.tag) + "</span>" +
+      "<h3>" + esc(P.name) + '</h3><p class="seat__job">' + esc(P.job) + "</p>" +
+      (show && planJob.monthly
+        ? (flags.founding ? '<p class="seat__label">Founding price</p>' : "") +
+          '<p class="seat__price">' + money(planJob.monthly) + "<small> /month</small></p>" +
+          '<p class="seat__setup">' + (C.ANNUAL_MONTHS_FREE ? "or " + money(planJob.monthly * X) + "/yr, " + C.ANNUAL_MONTHS_FREE + " months free. " : "") +
+          (fee ? money(fee) + " launch fee" + (C.ANNUAL_MONTHS_FREE ? ", waived on annual." : ".") : "") + "</p>"
+        : "") +
+      "<ul>" + P.lines.map(function (l) { return "<li>" + check + esc(l) + "</li>"; }).join("") + "</ul>" +
+      (show ? btn : "") +
+      "</article>";
+    var go = function (href, label, ext) {
+      return ' <a class="addon__go" href="' + esc(href) + '"' + (ext ? ' target="_blank" rel="noopener"' : "") + ">" + label + '<svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>';
     };
-    seatsEl.innerHTML = C.SEATS.map(function (s) {
-      // prices on + START_URL: hire online; otherwise the only intent is a demo call
-      var btn = C.START_URL && s.start
-        ? '<a class="btn ' + (s.featured ? "btn--dark" : "btn--ghost") + ' btn--block" href="' + esc(startUrl(s.start)) + '">Hire Boris now</a>'
-        : '<a class="btn ' + (s.featured ? "btn--dark" : "btn--ghost") + ' btn--block" href="#try" data-intent="call">Book a demo call</a>';
-      return (
-        '<article class="seat' + (s.featured ? " seat--featured" : "") + '">' +
-        (s.featured ? '<span class="seat__tag">Most complete</span>' : "") +
-        "<h3>" + esc(s.name) + '</h3><p class="seat__job">' + esc(s.job) + "</p>" +
-        (show
-          ? (flags.founding ? '<p class="seat__label">Founding price</p>' : "") +
-            '<p class="seat__price">' + money(s.monthly) + "<small> /month</small></p>" + '<p class="seat__setup">' + setupLine(s) + "</p>"
-          : "") +
-        "<ul>" + s.lines.map(function (l) { return "<li>" + check + esc(l) + "</li>"; }).join("") + "</ul>" +
-        (show ? btn : "") +
-        "</article>"
-      );
-    }).join("");
-    var more = function (job) {
-      return show && C.START_URL ? ' <a class="addon__go" href="' + esc(startUrl(job)) + '">Hire Boris now<svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>' : "";
-    };
-    var ads = C.ADS_ADDON, cm = (C.JOBS || []).filter(function (j) { return j.id === "case" || j.id === "marketing"; });
-    if (addonEl && show && cm.length) {
-      addonEl.innerHTML = cm.map(function (j, k) {
-        return '<h3' + (k ? ' class="addon__2"' : "") + ">" + esc(j.name) + " <span>" + money(j.monthly) + " /month on its own</span></h3><p>" + esc(j.line) + more(j.id) + "</p>";
-      }).join("");
-    }
     if (addonEl && ads) {
-      var adsPrice = show ? " <span>" + (typeof ads.monthly === "number" ? "+ " + money(ads.monthly) + " /month with any job" + (ads.standalone ? " · " + money(ads.standalone) + " on its own" : "") : "Price on a demo call") + "</span>" : "";
-      addonEl.insertAdjacentHTML("beforeend", '<h3' + (addonEl.innerHTML ? ' class="addon__2"' : "") + ">" + esc(ads.name) + adsPrice + "</h3><p>" + esc(ads.line) + more("ads") + "</p>");
+      var adsPrice = show ? " <span>+ " + money(ads.monthly) + " /month added to Boris</span>" : "";
+      addonEl.innerHTML = "<h3>" + esc(ads.name) + adsPrice + "</h3><p>" + esc(ads.line) + (show && C.START_URL ? go(C.START_URL + "?jobs=boris,ads", "Add it to Boris") : "") + "</p>" +
+        (show && ads.standalone ? '<p class="addon__alone">' + esc(ads.alone) + " The Ads Manager on its own is " + money(ads.standalone) + "/mo." + (C.START_URL ? go(C.START_URL + "?jobs=ads", "Ads Manager alone") : "") + "</p>" : "");
     }
-    if (addonEl && C.ADDON) {
+    if (addonEl && early) {
       addonEl.insertAdjacentHTML("beforeend",
-        '<h3 class="addon__2">' + esc(C.ADDON.name) + (show ? " <span>+ " + money(C.ADDON.monthly) + " /month per seat</span>" : "") + "</h3>" +
-        "<p>" + esc(C.ADDON.line) + (show ? ' <a class="addon__go" href="' + esc(C.BOOKING_URL || "#try") + '"' + (C.BOOKING_URL ? ' target="_blank" rel="noopener"' : ' data-intent="call"') + ">Book a walkthrough<svg class=\"i\" aria-hidden=\"true\"><use href=\"#i-arrow-right\"/></svg></a>" : "") + "</p>");
+        '<h3 class="addon__2">' + esc(early.name) + " <span>" + esc(early.label) + "</span></h3>" +
+        "<p>" + esc(early.line) + (C.BOOKING_URL ? go(C.BOOKING_URL, "Book a walkthrough", true) : ' <a class="addon__go" href="#try" data-intent="call">Book a walkthrough</a>') + "</p>");
     }
     if (show && C.ANNUAL_MONTHS_FREE) addonEl.insertAdjacentHTML("afterend", '<p class="fine fine--center">Pay for the year up front: ' + C.ANNUAL_MONTHS_FREE + " months free and no launch fee.</p>" +
       (C.BOOKING_URL ? '<p class="fine fine--center">Bigger firm, or want it tailored? <a href="' + esc(C.BOOKING_URL) + '" target="_blank" rel="noopener">Book a 20-minute walkthrough</a>.</p>' : ""));
     if (!show) addonEl.insertAdjacentHTML("afterend", '<p class="seats__cta"><a class="btn btn--ghost" href="#try" data-intent="call">Book a demo call for pricing</a></p>');
+    if (show) setText("faqPrice", "One flat monthly price: " + money(planJob.monthly) + "/mo for Boris, every job included. Add the Ads Manager for " + money(ads.monthly) + "/mo (" + money(ads.standalone) + "/mo on its own). Never a percentage of fees or settlements.");
     if (show && C.ANNUAL_MONTHS_FREE) setText("faqAnnual", (fee ? "Online orders pay a " + money(fee) + " launch fee once. " : "") + "Pay a year up front and get " + C.ANNUAL_MONTHS_FREE + " months free, with no launch fee.");
   }
 
