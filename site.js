@@ -386,7 +386,9 @@
   var setCtas = function (on) {
     ctas.forEach(function (a) {
       // same words on a return visit; the button just opens the demo straight away
-      if (on) { a.href = DEMO; a.target = "_blank"; a.rel = "noopener"; }
+      // 10/29: the one CTA is "Book a demo" -> returning visitors go straight to the booking page
+      if (on && C.BOOKING_URL) { a.href = bookingUrl(store.get() || {}); a.target = "_blank"; a.rel = "noopener"; }
+      else if (on) { a.href = "#try"; a.removeAttribute("target"); a.removeAttribute("rel"); }
       else { a.href = "#try"; a.removeAttribute("target"); a.removeAttribute("rel"); }
       a.textContent = a.getAttribute("data-label");
     });
@@ -394,16 +396,17 @@
   var lines = function (v) { return ["Name: " + v.name, "Firm: " + v.firm, "Email: " + v.email, "Phone: " + v.phone, "Role: " + v.role, v.attorneys ? "Attorneys: " + v.attorneys : "", "Wants: " + (v.intent === "call" ? "a demo call" : "the live demo")].filter(Boolean).join("\n"); };
   var showPanel = function (v, sent, focus) {
     var first = (v.name || "").trim().split(/\s+/)[0];
-    var call = v.intent === "call";
+    var call = true; // 10/29: demo booking only (old saved "try" visitors too)
     $("inH").textContent = (focus === "back" ? "Welcome back" : "You're in") + (first ? ", " + first : "") + ".";
     $("inP").textContent = call
-      ? "Pick a time for your walkthrough below. Meanwhile, the Boris demo is open to you: a sample firm with demo data."
+      ? "Pick a time for your demo below."
       : "The Boris demo opens in a new tab: a sample firm with demo data. Start on Today, then tap Ask and give him a job.";
     var od = $("openDemo"), bk = $("bookCall");
     od.href = DEMO;
     bk.href = C.BOOKING_URL ? bookingUrl(v) : mailto(C.CONTACT_EMAIL || "", "Boris walkthrough for " + (v.firm || "my firm"), lines(v) + "\n\nGood times for a 20-minute call:\n");
-    if (C.BOOKING_URL) { bk.target = "_blank"; bk.textContent = "Want a walkthrough? Book a 20-min call"; }
-    else bk.textContent = "Want a walkthrough? Email us for a 20-min call";
+    if (C.BOOKING_URL) { bk.target = "_blank"; bk.textContent = call ? "Pick a time for your demo" : "Want a walkthrough? Book a 20-min call"; }
+    else bk.textContent = call ? "Email us to book your demo" : "Want a walkthrough? Email us for a 20-min call";
+    od.hidden = call; // 10/29: one CTA, the booking; no self-serve demo button next to it
     // one blue: the action they asked for
     od.className = "btn btn--block " + (call ? "btn--ghost" : "btn--primary");
     bk.className = "btn btn--block " + (call ? "btn--primary" : "btn--ghost");
@@ -418,8 +421,8 @@
   if (form && panel) {
     var saved = store.get();
     if (saved && saved.email) showPanel(saved, saved.sent, "back");
-    var lastIntent = "try";
-    [$("btnTry"), $("btnCall")].forEach(function (b) { b.addEventListener("click", function () { lastIntent = b.value; }); });
+    var lastIntent = "call"; // 10/29: one button, Book a demo
+    [$("btnTry"), $("btnCall")].forEach(function (b) { if (b) b.addEventListener("click", function () { lastIntent = b.value; }); });
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var intent = (e.submitter && e.submitter.value) || lastIntent;

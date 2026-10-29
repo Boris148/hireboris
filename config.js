@@ -19,8 +19,8 @@ window.BORIS_SITE = {
   // v12: a 4th example call, a REAL test call. null = off: keep it off on every publish until the caller
   // OKs their voice going public. Staging (tmp/boris-v12-calls-cpc/gen/site-stage.mjs) injects it.
   REAL_CALL: null,
-  SHOW_PRICES: true,
-  START_URL: "/start/",
+  SHOW_PRICES: false, // 10/29 Jeremy (voice, confirmed): no pricing on the site, demo-only
+  START_URL: "", // 10/29: purchase path off; /start/ redirects to the demo booking
   CHECKOUT_API: "https://boris-checkout.hireboris.workers.dev",
   VIDEO: true,
   VIDEO_SOUND: true,
